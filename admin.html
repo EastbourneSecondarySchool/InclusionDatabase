@@ -180,7 +180,7 @@
   let students = [];
   let currentEditIndex = null;
 
-  // Load saved theme
+  // Load saved theme and students
   document.addEventListener('DOMContentLoaded', () => {
     const theme = localStorage.getItem('theme');
     if (theme === 'dark') {
@@ -206,12 +206,16 @@
     const tbody = document.querySelector('#adminStudentTable tbody');
     tbody.innerHTML = '';
     data.forEach((student, index) => {
+      const timeoutVal = student.timeout || 'N';
+      const robloxVal = student.roblox || '';
+      const discordVal = student.discord || '';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${student.name}</td>
-        <td>${student.robloxUser || ''}</td>
-        <td>${student.discordUser || ''}</td>
-        <td>${student.timeoutPass ? 'Y' : 'N'}</td>
+        <td>${robloxVal}</td>
+        <td>${discordVal}</td>
+        <td>${timeoutVal}</td>
         <td>${student.notes || ''}</td>
         <td>
           <button onclick="editStudent(${index})">Edit</button>
@@ -224,9 +228,10 @@
 
   function sortTable(colIndex) {
     students.sort((a, b) => {
-      const aVal = Object.values(a)[colIndex] || '';
-      const bVal = Object.values(b)[colIndex] || '';
-      return aVal.toString().localeCompare(bVal.toString());
+      const keys = ['name', 'roblox', 'discord', 'timeout', 'notes'];
+      const aVal = (a[keys[colIndex]] || '').toString().toLowerCase();
+      const bVal = (b[keys[colIndex]] || '').toString().toLowerCase();
+      return aVal.localeCompare(bVal);
     });
     renderTable(students);
   }
@@ -242,9 +247,9 @@
     currentEditIndex = index;
     const s = students[index];
     document.getElementById('editName').value = s.name;
-    document.getElementById('editRoblox').value = s.robloxUser || '';
-    document.getElementById('editDiscord').value = s.discordUser || '';
-    document.getElementById('editTimeout').checked = !!s.timeoutPass;
+    document.getElementById('editRoblox').value = s.roblox || '';
+    document.getElementById('editDiscord').value = s.discord || '';
+    document.getElementById('editTimeout').checked = (s.timeout === 'Y');
     document.getElementById('editNotes').value = s.notes || '';
     document.getElementById('modalOverlay').style.display = 'block';
     document.getElementById('editModal').style.display = 'block';
@@ -260,9 +265,9 @@
 
     students[currentEditIndex] = {
       name: document.getElementById('editName').value.trim(),
-      robloxUser: document.getElementById('editRoblox').value.trim(),
-      discordUser: document.getElementById('editDiscord').value.trim(),
-      timeoutPass: document.getElementById('editTimeout').checked,
+      roblox: document.getElementById('editRoblox').value.trim(),
+      discord: document.getElementById('editDiscord').value.trim(),
+      timeout: document.getElementById('editTimeout').checked ? 'Y' : 'N',
       notes: document.getElementById('editNotes').value.trim(),
     };
 
