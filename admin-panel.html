@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Panel</title>
+  <title>Admin Panel - ESS Pastoral Database</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
     label {
       display: block;
       margin-top: 10px;
@@ -13,75 +22,163 @@
     input {
       width: 100%;
       padding: 8px;
-      margin-bottom: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
     }
-    button, a.button {
-      margin-top: 20px;
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
       background: #0066cc;
       color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
       border: none;
+      border-radius: 5px;
       cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
     }
-    ul {
-      list-style: none;
-      padding: 0;
+    button.remove-btn {
+      background: #cc3300;
     }
-    li {
-      margin-bottom: 10px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    #returnBtn {
+      display: block;
+      margin: 30px auto 0 auto;
+      width: 150px;
+      text-align: center;
+      background-color: #444;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
 <script>
-  if (!sessionStorage.getItem('loggedInUser')) {
+  // Require login and admin access
+  const loggedUser = sessionStorage.getItem('loggedInUser');
+  const isAdmin = sessionStorage.getItem('isAdmin');
+  if (!loggedUser || isAdmin !== 'true') {
     window.location.href = 'login.html';
   }
 </script>
 
-  <h1>Admin Panel</h1>
-  <h2>Current Staff Users</h2>
-  <ul id="staffList"></ul>
+<h1>Admin Panel - ESS Pastoral Database</h1>
 
+<section>
   <h2>Add Staff User</h2>
   <form id="addStaffForm">
-    <label>Username</label>
+    <label for="staffUsername">Username</label>
     <input type="text" id="staffUsername" required />
-    <label>Password</label>
+    <label for="staffPassword">Password</label>
     <input type="password" id="staffPassword" required />
     <button type="submit">Add Staff User</button>
   </form>
+  <div id="staffMsg" class="error"></div>
+</section>
 
-  <a href="index.html" class="button">Return</a>
+<section>
+  <h2>All Students</h2>
+  <table id="adminStudentTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Roblox User</th>
+        <th>Discord User</th>
+        <th>Timeout Pass</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Students inserted here -->
+    </tbody>
+  </table>
+</section>
 
-  <script>
-    function loadStaff() {
-      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
-      const ul = document.getElementById('staffList');
-      ul.innerHTML = '';
-      staffUsers.forEach(user => {
-        const li = document.createElement('li');
-        li.textContent = `Username: ${user.username}`;
-        ul.appendChild(li);
-      });
+<button id="returnBtn" onclick="window.location.href='index.html'">Return</button>
+
+<script>
+  // Staff user form handling
+  const addStaffForm = document.getElementById('addStaffForm');
+  const staffMsg = document.getElementById('staffMsg');
+
+  addStaffForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    staffMsg.textContent = '';
+
+    const username = document.getElementById('staffUsername').value.trim();
+    const password = document.getElementById('staffPassword').value;
+
+    if (!username || !password) {
+      staffMsg.textContent = 'Please enter both username and password.';
+      return;
     }
 
-    document.getElementById('addStaffForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
-      const username = document.getElementById('staffUsername').value;
-      const password = document.getElementById('staffPassword').value;
-      staffUsers.push({ username, password });
-      localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
-      alert('Staff user added.');
-      this.reset();
-      loadStaff();
-    });
+    // Load existing staff users or empty array
+    let staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
 
-    loadStaff();
-  </script>
+    // Check if username already exists
+    if (staffUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      staffMsg.textContent = 'That username already exists.';
+      return;
+    }
+
+    // Add new staff user
+    staffUsers.push({ username, password });
+    localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
+
+    staffMsg.style.color = 'green';
+    staffMsg.textContent = `Staff user "${username}" added successfully!`;
+    addStaffForm.reset();
+  });
+
+  // Student management
+  function loadAllStudentsAdmin() {
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    const tbody = document.getElementById('adminStudentTable').querySelector('tbody');
+    tbody.innerHTML = '';
+
+    students.forEach((student, index) => {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>${student.name}</td>
+        <td>${student.robloxUser || ''}</td>
+        <td>${student.discordUser || ''}</td>
+        <td>${student.timeoutPass ? 'Y' : 'N'}</td>
+        <td>${student.notes || ''}</td>
+        <td>
+          <button class="remove-btn" onclick="removeStudent(${index})">Remove</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function removeStudent(index) {
+    if (!confirm('Are you sure you want to remove this student?')) return;
+
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    students.splice(index, 1);
+    localStorage.setItem('students', JSON.stringify(students));
+    loadAllStudentsAdmin();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAllStudentsAdmin();
+  });
+</script>
 </body>
 </html>
