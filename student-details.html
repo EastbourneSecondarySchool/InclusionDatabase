@@ -46,127 +46,158 @@
   }
 </script>
 
-  <h1>Student Details</h1>
-  <form id="studentForm">
-    <label>Student Name</label>
-    <input type="text" id="name" required />
+<h1>Student Details</h1>
+<form id="studentForm">
+  <label>Student Name</label>
+  <input type="text" id="name" required />
 
-    <label>Roblox Username</label>
-    <input type="text" id="roblox" />
+  <label>Roblox Username</label>
+  <input type="text" id="roblox" />
 
-    <label>Discord Username</label>
-    <input type="text" id="discord" />
+  <label>Discord Username</label>
+  <input type="text" id="discord" />
 
-    <label>Timeout Pass</label>
-    <select id="timeout">
-      <option value="Y">Y</option>
-      <option value="N">N</option>
-    </select>
+  <label>Timeout Pass</label>
+  <select id="timeout">
+    <option value="Y">Y</option>
+    <option value="N">N</option>
+  </select>
 
-    <label>Notes</label>
-    <textarea id="notes"></textarea>
+  <label>Notes</label>
+  <textarea id="notes"></textarea>
 
-    <button type="submit">Save</button>
-  </form>
+  <button type="submit">Save</button>
+</form>
 
-  <h2>Comments / Notes</h2>
-  <div id="commentsList"></div>
+<h2>Comments / Notes</h2>
+<div id="commentsList"></div>
 
-  <form id="addCommentForm">
-    <label>Add Comment</label>
-    <textarea id="newComment" required></textarea>
-    <button type="submit">Add Comment</button>
-  </form>
+<form id="addCommentForm">
+  <label>Add Comment</label>
+  <textarea id="newComment" required></textarea>
+  <button type="submit">Add Comment</button>
+</form>
 
-  <a href="index.html" class="button">Return</a>
+<a href="index.html" class="button">Return</a>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get('id');
-    if (studentId === null) {
-      alert('No student selected.');
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const studentId = urlParams.get('id');
+
+  if (!studentId) {
+    alert('No student selected.');
+    window.location.href = 'student-list.html';
+  }
+
+  const nameInput = document.getElementById('name');
+  const robloxInput = document.getElementById('roblox');
+  const discordInput = document.getElementById('discord');
+  const timeoutInput = document.getElementById('timeout');
+  const notesInput = document.getElementById('notes');
+  const commentsList = document.getElementById('commentsList');
+  const newCommentInput = document.getElementById('newComment');
+
+  let student = null;
+
+  async function fetchStudent() {
+    try {
+      const res = await fetch(`/api/student?id=${encodeURIComponent(studentId)}`);
+      if (!res.ok) throw new Error(`Failed to fetch student: ${res.statusText}`);
+      student = await res.json();
+
+      if (!student) {
+        alert('Student not found.');
+        window.location.href = 'student-list.html';
+        return;
+      }
+      loadStudentData();
+    } catch (error) {
+      alert(error.message);
       window.location.href = 'student-list.html';
     }
+  }
 
-    // Always load latest students from localStorage when page loads
-    let students = JSON.parse(localStorage.getItem('students')) || [];
-    let student = students[studentId];
-
-    if (!student) {
-      alert('Student not found.');
-      window.location.href = 'student-list.html';
+  function renderComments() {
+    commentsList.innerHTML = '';
+    if (student.comments && student.comments.length) {
+      student.comments.forEach(comment => {
+        const div = document.createElement('div');
+        div.classList.add('comment');
+        div.textContent = comment;
+        commentsList.appendChild(div);
+      });
+    } else {
+      commentsList.textContent = 'No comments yet.';
     }
+  }
 
-    // Populate form with student data
-    const nameInput = document.getElementById('name');
-    const robloxInput = document.getElementById('roblox');
-    const discordInput = document.getElementById('discord');
-    const timeoutInput = document.getElementById('timeout');
-    const notesInput = document.getElementById('notes');
-    const commentsList = document.getElementById('commentsList');
+  function loadStudentData() {
+    nameInput.value = student.name || '';
+    robloxInput.value = student.roblox || '';
+    discordInput.value = student.discord || '';
+    timeoutInput.value = student.timeout || 'N';
+    notesInput.value = student.notes || '';
+    renderComments();
+  }
 
-    function renderComments() {
-      commentsList.innerHTML = '';
-      if (student.comments && student.comments.length) {
-        student.comments.forEach((comment, i) => {
-          const div = document.createElement('div');
-          div.classList.add('comment');
-          div.textContent = comment;
-          commentsList.appendChild(div);
-        });
+  document.getElementById('studentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    student.name = nameInput.value.trim();
+    student.roblox = robloxInput.value.trim();
+    student.discord = discordInput.value.trim();
+    student.timeout = timeoutInput.value;
+    student.notes = notesInput.value.trim();
+
+    try {
+      const res = await fetch('/api/student/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(student)
+      });
+
+      if (res.ok) {
+        alert('Student details saved.');
       } else {
-        commentsList.textContent = 'No comments yet.';
+        const text = await res.text();
+        alert('Failed to save student: ' + text);
       }
+    } catch (error) {
+      alert('Network error: ' + error.message);
     }
+  });
 
-    function loadStudentData() {
-      nameInput.value = student.name || '';
-      robloxInput.value = student.roblox || '';
-      discordInput.value = student.discord || '';
-      timeoutInput.value = student.timeout || 'N';
-      notesInput.value = student.notes || '';
-      renderComments();
-    }
+  document.getElementById('addCommentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-    loadStudentData();
+    const newComment = newCommentInput.value.trim();
+    if (!newComment) return;
 
-    document.getElementById('studentForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    student.comments = student.comments || [];
+    student.comments.push(newComment);
 
-      // Reload students to get any changes from elsewhere
-      students = JSON.parse(localStorage.getItem('students')) || [];
-      student = students[studentId];
+    try {
+      const res = await fetch('/api/student/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(student)
+      });
 
-      student.name = nameInput.value;
-      student.roblox = robloxInput.value;
-      student.discord = discordInput.value;
-      student.timeout = timeoutInput.value;
-      student.notes = notesInput.value;
-
-      students[studentId] = student;
-      localStorage.setItem('students', JSON.stringify(students));
-      alert('Student details saved.');
-    });
-
-    document.getElementById('addCommentForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      // Reload students and student again before updating
-      students = JSON.parse(localStorage.getItem('students')) || [];
-      student = students[studentId];
-
-      const newComment = document.getElementById('newComment').value.trim();
-      if (newComment) {
-        if (!student.comments) student.comments = [];
-        student.comments.push(newComment);
-
-        students[studentId] = student;
-        localStorage.setItem('students', JSON.stringify(students));
-
-        document.getElementById('newComment').value = '';
+      if (res.ok) {
+        newCommentInput.value = '';
         renderComments();
+      } else {
+        const text = await res.text();
+        alert('Failed to add comment: ' + text);
+        student.comments.pop(); // revert in-memory comment on failure
       }
-    });
-  </script>
+    } catch (error) {
+      alert('Network error: ' + error.message);
+      student.comments.pop(); // revert
+    }
+  });
+
+  fetchStudent();
+</script>
 </body>
 </html>
