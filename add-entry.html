@@ -29,6 +29,12 @@
   </style>
 </head>
 <body>
+<script>
+  if (!sessionStorage.getItem('loggedInUser')) {
+    window.location.href = 'login.html';
+  }
+</script>
+
   <h1>Add New Student Entry</h1>
   <form id="addStudentForm">
     <label>Student Name</label>
