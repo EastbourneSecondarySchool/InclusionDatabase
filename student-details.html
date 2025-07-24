@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Details</title>
   <style>
     label {
@@ -15,29 +15,41 @@
       padding: 8px;
       margin-bottom: 10px;
     }
-    button {
-      padding: 10px 20px;
-      background-color: #0066cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    .button {
-      display: inline-block;
+    button, a.button {
       margin-top: 20px;
       background: #0066cc;
       color: white;
       padding: 10px 20px;
       border-radius: 5px;
+      border: none;
+      cursor: pointer;
       text-decoration: none;
+      display: inline-block;
+    }
+    #commentsList {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    .comment {
+      margin-bottom: 10px;
+      background: #f2f2f2;
+      padding: 8px;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Edit Student Details</h1>
+<script>
+  if (!sessionStorage.getItem('loggedInUser')) {
+    window.location.href = 'login.html';
+  }
+</script>
+
+  <h1>Student Details</h1>
   <form id="studentForm">
     <label>Student Name</label>
-    <input type="text" id="name" />
+    <input type="text" id="name" required />
 
     <label>Roblox Username</label>
     <input type="text" id="roblox" />
@@ -54,62 +66,93 @@
     <label>Notes</label>
     <textarea id="notes"></textarea>
 
-    <button type="submit">Save Changes</button>
+    <button type="submit">Save</button>
   </form>
 
-  <h2>Add Comment</h2>
-  <textarea id="newComment" placeholder="Add a comment..."></textarea>
-  <button onclick="addComment()">Add Comment</button>
+  <h2>Comments / Notes</h2>
+  <div id="commentsList"></div>
 
-  <ul id="commentList"></ul>
+  <form id="addCommentForm">
+    <label>Add Comment</label>
+    <textarea id="newComment" required></textarea>
+    <button type="submit">Add Comment</button>
+  </form>
 
   <a href="index.html" class="button">Return</a>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    const students = JSON.parse(localStorage.getItem('students')) || [];
-    const student = students[id];
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id');
+    if (studentId === null) {
+      alert('No student selected.');
+      window.location.href = 'student-list.html';
+    }
 
-    document.getElementById('name').value = student.name;
-    document.getElementById('roblox').value = student.roblox;
-    document.getElementById('discord').value = student.discord;
-    document.getElementById('timeout').value = student.timeout;
-    document.getElementById('notes').value = student.notes;
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    const student = students[studentId];
+
+    if (!student) {
+      alert('Student not found.');
+      window.location.href = 'student-list.html';
+    }
+
+    // Populate form with student data
+    const nameInput = document.getElementById('name');
+    const robloxInput = document.getElementById('roblox');
+    const discordInput = document.getElementById('discord');
+    const timeoutInput = document.getElementById('timeout');
+    const notesInput = document.getElementById('notes');
+    const commentsList = document.getElementById('commentsList');
+
+    function renderComments() {
+      commentsList.innerHTML = '';
+      if (student.comments && student.comments.length) {
+        student.comments.forEach((comment, i) => {
+          const div = document.createElement('div');
+          div.classList.add('comment');
+          div.textContent = comment;
+          commentsList.appendChild(div);
+        });
+      } else {
+        commentsList.textContent = 'No comments yet.';
+      }
+    }
+
+    function loadStudentData() {
+      nameInput.value = student.name || '';
+      robloxInput.value = student.roblox || '';
+      discordInput.value = student.discord || '';
+      timeoutInput.value = student.timeout || 'N';
+      notesInput.value = student.notes || '';
+      renderComments();
+    }
+
+    loadStudentData();
 
     document.getElementById('studentForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      students[id].name = document.getElementById('name').value;
-      students[id].roblox = document.getElementById('roblox').value;
-      students[id].discord = document.getElementById('discord').value;
-      students[id].timeout = document.getElementById('timeout').value;
-      students[id].notes = document.getElementById('notes').value;
+      student.name = nameInput.value;
+      student.roblox = robloxInput.value;
+      student.discord = discordInput.value;
+      student.timeout = timeoutInput.value;
+      student.notes = notesInput.value;
+
+      students[studentId] = student;
       localStorage.setItem('students', JSON.stringify(students));
-      alert('Student updated.');
+      alert('Student details saved.');
     });
 
-    function addComment() {
-      const comment = document.getElementById('newComment').value;
-      if (!students[id].comments) {
-        students[id].comments = [];
+    document.getElementById('addCommentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const newComment = document.getElementById('newComment').value.trim();
+      if (newComment) {
+        if (!student.comments) student.comments = [];
+        student.comments.push(newComment);
+        localStorage.setItem('students', JSON.stringify(students));
+        document.getElementById('newComment').value = '';
+        renderComments();
       }
-      students[id].comments.push(comment);
-      localStorage.setItem('students', JSON.stringify(students));
-      document.getElementById('newComment').value = '';
-      displayComments();
-    }
-
-    function displayComments() {
-      const commentList = document.getElementById('commentList');
-      commentList.innerHTML = '';
-      (students[id].comments || []).forEach(c => {
-        const li = document.createElement('li');
-        li.textContent = c;
-        commentList.appendChild(li);
-      });
-    }
-
-    displayComments();
+    });
   </script>
 </body>
 </html>
