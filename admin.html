@@ -13,9 +13,7 @@
       --btn-bg: #0066cc;
       --btn-danger: #cc3300;
       --btn-text: #ffffff;
-      --btn-success: #28a745;
     }
-
     body.dark-mode {
       --bg-color: #1c1c1c;
       --text-color: #eaeaea;
@@ -24,9 +22,7 @@
       --btn-bg: #004c99;
       --btn-danger: #aa0000;
       --btn-text: #ffffff;
-      --btn-success: #1e7e34;
     }
-
     body {
       font-family: Arial, sans-serif;
       background-color: var(--bg-color);
@@ -35,11 +31,9 @@
       margin: 40px auto;
       padding: 0 20px;
     }
-
-    h1, h2, h3, h4 {
+    h1, h2 {
       text-align: center;
     }
-
     #searchBar {
       width: 100%;
       padding: 10px;
@@ -47,25 +41,21 @@
       margin-bottom: 20px;
       box-sizing: border-box;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
-
     th, td {
       border: 1px solid var(--table-border);
       padding: 8px;
       text-align: left;
       cursor: default;
     }
-
     th.sortable:hover {
       background-color: var(--header-bg);
       cursor: pointer;
     }
-
     button {
       padding: 6px 10px;
       margin-right: 5px;
@@ -75,15 +65,9 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     button.remove-btn {
       background-color: var(--btn-danger);
     }
-
-    button.success-btn {
-      background-color: var(--btn-success);
-    }
-
     #returnBtn {
       display: block;
       margin: 30px auto 0 auto;
@@ -95,8 +79,7 @@
       border-radius: 5px;
       text-align: center;
     }
-
-    #editModal, #staffModal, #passwordResetModal {
+    #editModal, #editStaffModal, #resetPassModal {
       display: none;
       position: fixed;
       top: 10%;
@@ -107,13 +90,10 @@
       padding: 20px;
       z-index: 1000;
       width: 90%;
-      max-width: 550px;
+      max-width: 500px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       color: var(--text-color);
-      max-height: 80vh;
-      overflow-y: auto;
     }
-
     #modalOverlay {
       display: none;
       position: fixed;
@@ -121,20 +101,7 @@
       background-color: rgba(0,0,0,0.5);
       z-index: 999;
     }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    #manageStaffBtn {
-      background-color: #28a745; /* green button */
-    }
-
-    input[type="text"], input[type="password"], textarea {
+    input, textarea, select {
       width: 100%;
       margin-bottom: 10px;
       padding: 8px;
@@ -142,19 +109,48 @@
       color: var(--text-color);
       border: 1px solid var(--table-border);
       box-sizing: border-box;
-      border-radius: 4px;
     }
-
     label {
-      user-select: none;
+      display: block;
+      margin-bottom: 5px;
     }
-
-    /* Scroll inside modals if content large */
-    #staffTable tbody tr input[type="text"] {
-      width: 95%;
-      padding: 4px 6px;
-      margin: 0;
-      box-sizing: border-box;
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      cursor: pointer;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .tab-btn.active {
+      background: #004c99;
+    }
+    .hidden {
+      display: none;
+    }
+    .request-item {
+      background: #f2f2f2;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .request-item:hover {
+      background: #ddd;
     }
   </style>
 </head>
@@ -171,29 +167,62 @@
 <h1>Admin Panel - ESS Pastoral Database</h1>
 
 <div class="top-bar">
-  <input type="text" id="searchBar" placeholder="Search students by name...">
+  <input type="text" id="searchBar" placeholder="Search by name..." />
   <button onclick="toggleTheme()">Toggle Light/Dark</button>
-  <button id="manageStaffBtn">Manage Staff</button>
 </div>
 
-<table id="adminStudentTable">
-  <thead>
-    <tr>
-      <th class="sortable" onclick="sortTable(0)">Name</th>
-      <th class="sortable" onclick="sortTable(1)">Roblox User</th>
-      <th class="sortable" onclick="sortTable(2)">Discord User</th>
-      <th class="sortable" onclick="sortTable(3)">Timeout Pass</th>
-      <th>Notes</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="studentsTab">Students</button>
+  <button class="tab-btn" data-tab="staffTab">Staff</button>
+  <button class="tab-btn" data-tab="passwordTab">Password Notices</button>
+</div>
+
+<!-- Students Tab -->
+<div id="studentsTab">
+  <table id="adminStudentTable">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="sortTable('students',0)">Name</th>
+        <th class="sortable" onclick="sortTable('students',1)">Roblox User</th>
+        <th class="sortable" onclick="sortTable('students',2)">Discord User</th>
+        <th class="sortable" onclick="sortTable('students',3)">Timeout Pass</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Staff Tab -->
+<div id="staffTab" class="hidden">
+  <button onclick="showAddStaffModal()">Add Staff Member</button>
+  <table id="staffTable" style="margin-top:10px;">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="sortTable('staff',0)">Username</th>
+        <th class="sortable" onclick="sortTable('staff',1)">Role</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Password Notices Tab -->
+<div id="passwordTab" class="hidden">
+  <h2>Password Reset Requests</h2>
+  <div id="passwordRequestsContainer">
+    <!-- Requests will be loaded here -->
+  </div>
+  <p id="noRequestsMsg" style="text-align:center; color:#666;">No password reset requests.</p>
+</div>
 
 <button id="returnBtn" onclick="window.location.href='index.html'">Return</button>
 
-<!-- Edit Student Modal -->
 <div id="modalOverlay"></div>
+
+<!-- Edit Student Modal -->
 <div id="editModal">
   <h3>Edit Student</h3>
   <input type="text" id="editName" placeholder="Student Name" />
@@ -205,310 +234,354 @@
   <button onclick="closeEdit()">Cancel</button>
 </div>
 
-<!-- Staff Management Modal -->
-<div id="staffModal">
-  <h3>Manage Staff</h3>
-  <table id="staffTable" style="width:100%; margin-bottom: 10px;">
-    <thead>
-      <tr><th>Username</th><th>Admin</th><th>Actions</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <h4>Add New Staff</h4>
-  <input type="text" id="newStaffUsername" placeholder="Username" />
-  <input type="password" id="newStaffPassword" placeholder="Password" />
-  <label><input type="checkbox" id="newStaffAdmin" /> Admin</label><br />
-  <button id="addStaffBtn">Add Staff</button>
-
-  <hr>
-
-  <h3>Password Reset Requests</h3>
-  <table id="passwordNoticesTable" style="width:100%;">
-    <thead>
-      <tr><th>Username</th><th>Requested At</th><th>Actions</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <button onclick="closeStaffModal()">Close</button>
+<!-- Add/Edit Staff Modal -->
+<div id="editStaffModal">
+  <h3 id="staffModalTitle">Add Staff Member</h3>
+  <input type="text" id="staffUsername" placeholder="Username" />
+  <input type="password" id="staffPassword" placeholder="Password" />
+  <select id="staffRole">
+    <option value="staff">Staff</option>
+    <option value="admin">Admin</option>
+  </select>
+  <button onclick="saveStaff()">Save</button>
+  <button onclick="closeStaffModal()">Cancel</button>
 </div>
 
-<!-- Password Reset Modal -->
-<div id="passwordResetModal">
-  <h3>Reset Password</h3>
-  <p><strong>User:</strong> <span id="resetUsername"></span></p>
-  <input type="password" id="newPasswordInput" placeholder="Enter new password" />
-  <button onclick="confirmPasswordReset()">Confirm Reset</button>
-  <button onclick="closePasswordResetModal()">Cancel</button>
+<!-- Reset Password Modal -->
+<div id="resetPassModal">
+  <h3>Reset Password for <span id="resetUserSpan"></span></h3>
+  <input type="password" id="newPasswordInput" placeholder="New Password" />
+  <button onclick="confirmResetPassword()">Reset Password</button>
+  <button onclick="closeResetPassModal()">Cancel</button>
 </div>
 
 <script>
+  // Global variables
   let students = [];
+  let staffUsers = [];
+  let passwordRequests = [];
   let currentEditIndex = null;
-  const staffKey = 'staffUsers';
-  const passwordRequestsKey = 'passwordResetRequests';
+  let currentStaffEditIndex = null;
+  let currentResetRequestIndex = null;
 
-  // Load saved theme and data
+  // Load saved theme and data on DOM ready
   document.addEventListener('DOMContentLoaded', () => {
     const theme = localStorage.getItem('theme');
-    if (theme === 'dark') {
-      document.body.classList.add('dark-mode');
-    }
+    if (theme === 'dark') document.body.classList.add('dark-mode');
 
     students = JSON.parse(localStorage.getItem('students')) || [];
-    renderTable(students);
+    staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
+    passwordRequests = JSON.parse(localStorage.getItem('passwordResetRequests')) || [];
 
-    document.getElementById('searchBar').addEventListener('input', function () {
-      const filtered = students.filter(s => s.name.toLowerCase().includes(this.value.toLowerCase()));
-      renderTable(filtered);
+    renderTable('students', students);
+    renderTable('staff', staffUsers);
+    renderPasswordRequests();
+
+    document.getElementById('searchBar').addEventListener('input', onSearchInput);
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const tabId = btn.getAttribute('data-tab');
+        ['studentsTab', 'staffTab', 'passwordTab'].forEach(id => {
+          document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(tabId).classList.remove('hidden');
+      });
+    });
+
+    // Modal overlay click to close modals
+    document.getElementById('modalOverlay').addEventListener('click', () => {
+      closeEdit();
+      closeStaffModal();
+      closeResetPassModal();
     });
   });
 
+  // Theme toggle
   function toggleTheme() {
     document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    if (document.body.classList.contains('dark-mode')) {
+      localStorage.setItem('theme', 'dark');
+    } else {
+      localStorage.removeItem('theme');
+    }
   }
 
-  function renderTable(data) {
-    const tbody = document.querySelector('#adminStudentTable tbody');
-    tbody.innerHTML = '';
-    data.forEach((student, index) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${student.name}</td>
-        <td>${student.roblox || student.robloxUser || ''}</td>
-        <td>${student.discord || student.discordUser || ''}</td>
-        <td>${student.timeout === 'Y' || student.timeoutPass ? 'Y' : 'N'}</td>
-        <td>${student.notes || ''}</td>
-        <td>
-          <button onclick="editStudent(${index})">Edit</button>
-          <button class="remove-btn" onclick="removeStudent(${index})">Remove</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
+  // Render tables
+  function renderTable(type, data) {
+    let tbody;
+    if (type === 'students') {
+      tbody = document.querySelector('#adminStudentTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((student, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${student.name}</td>
+          <td>${student.robloxUser}</td>
+          <td>${student.discordUser}</td>
+          <td>${student.timeoutPass ? 'Yes' : 'No'}</td>
+          <td>${student.notes}</td>
+          <td>
+            <button onclick="editStudent(${idx})">Edit</button>
+            <button class="remove-btn" onclick="removeStudent(${idx})">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else if (type === 'staff') {
+      tbody = document.querySelector('#staffTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((staff, idx) => {
+        tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${staff.username}</td>
+          <td>${staff.isAdmin ? 'Admin' : 'Staff'}</td>
+          <td>
+            <button onclick="editStaff(${idx})">Edit</button>
+            <button class="remove-btn" onclick="removeStaff(${idx})">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  // Search filtering on students only
+  function onSearchInput(e) {
+    const query = e.target.value.toLowerCase();
+    const filtered = students.filter(s => s.name.toLowerCase().includes(query));
+    renderTable('students', filtered);
+  }
+
+  // Sorting function for both tables
+  function sortTable(type, colIndex) {
+    let dataArray = (type === 'students') ? students : staffUsers;
+    const keys = {
+      students: ['name', 'robloxUser', 'discordUser', 'timeoutPass', 'notes'],
+      staff: ['username', 'isAdmin']
+    };
+    const key = keys[type][colIndex];
+    let asc = true;
+
+    // We'll toggle sorting on each click - store last sorted state in element dataset
+    const th = (type === 'students') ?
+      document.querySelector(`#adminStudentTable th:nth-child(${colIndex + 1})`) :
+      document.querySelector(`#staffTable th:nth-child(${colIndex + 1})`);
+
+    asc = !th.dataset.asc || th.dataset.asc === 'false';
+    th.dataset.asc = asc;
+
+    dataArray.sort((a,b) => {
+      let valA = a[key];
+      let valB = b[key];
+
+      // For isAdmin (boolean), convert to string for sorting
+      if (typeof valA === 'boolean') valA = valA ? 'Admin' : 'Staff';
+      if (typeof valB === 'boolean') valB = valB ? 'Admin' : 'Staff';
+
+      if (valA < valB) return asc ? -1 : 1;
+      if (valA > valB) return asc ? 1 : -1;
+      return 0;
     });
+
+    if(type === 'students') {
+      students = dataArray;
+      renderTable('students', students);
+    } else {
+      staffUsers = dataArray;
+      renderTable('staff', staffUsers);
+    }
   }
 
-  function sortTable(colIndex) {
-    students.sort((a, b) => {
-      const aVal = Object.values(a)[colIndex] || '';
-      const bVal = Object.values(b)[colIndex] || '';
-      return aVal.toString().localeCompare(bVal.toString());
-    });
-    renderTable(students);
-  }
+  // Student edit/remove
+  function editStudent(idx) {
+    currentEditIndex = idx;
+    const student = students[idx];
+    document.getElementById('editName').value = student.name;
+    document.getElementById('editRoblox').value = student.robloxUser;
+    document.getElementById('editDiscord').value = student.discordUser;
+    document.getElementById('editTimeout').checked = student.timeoutPass;
+    document.getElementById('editNotes').value = student.notes;
 
-  function removeStudent(index) {
-    if (!confirm('Are you sure you want to remove this student?')) return;
-    students.splice(index, 1);
-    localStorage.setItem('students', JSON.stringify(students));
-    renderTable(students);
-  }
-
-  function editStudent(index) {
-    currentEditIndex = index;
-    const s = students[index];
-    document.getElementById('editName').value = s.name;
-    document.getElementById('editRoblox').value = s.roblox || s.robloxUser || '';
-    document.getElementById('editDiscord').value = s.discord || s.discordUser || '';
-    document.getElementById('editTimeout').checked = s.timeout === 'Y' || s.timeoutPass === 'Y';
-    document.getElementById('editNotes').value = s.notes || '';
-    document.getElementById('modalOverlay').style.display = 'block';
-    document.getElementById('editModal').style.display = 'block';
-  }
-
-  function closeEdit() {
-    document.getElementById('modalOverlay').style.display = 'none';
-    document.getElementById('editModal').style.display = 'none';
+    showModal('editModal');
   }
 
   function saveEdit() {
     const name = document.getElementById('editName').value.trim();
+    const roblox = document.getElementById('editRoblox').value.trim();
+    const discord = document.getElementById('editDiscord').value.trim();
+    const timeoutPass = document.getElementById('editTimeout').checked;
+    const notes = document.getElementById('editNotes').value.trim();
+
     if (!name) {
-      alert('Name is required.');
+      alert('Name cannot be empty');
       return;
     }
-    students[currentEditIndex] = {
-      name,
-      robloxUser: document.getElementById('editRoblox').value.trim(),
-      discordUser: document.getElementById('editDiscord').value.trim(),
-      timeoutPass: document.getElementById('editTimeout').checked ? 'Y' : 'N',
-      notes: document.getElementById('editNotes').value.trim()
-    };
+
+    students[currentEditIndex] = { name, robloxUser: roblox, discordUser: discord, timeoutPass, notes };
     localStorage.setItem('students', JSON.stringify(students));
+    renderTable('students', students);
     closeEdit();
-    renderTable(students);
   }
 
-  // --- Staff Management ---
+  function closeEdit() {
+    currentEditIndex = null;
+    hideModal('editModal');
+  }
 
-  document.getElementById('manageStaffBtn').addEventListener('click', () => {
-    loadStaffUsers();
-    loadPasswordRequests();
-    document.getElementById('staffModal').style.display = 'block';
-  });
+  function removeStudent(idx) {
+    if (!confirm('Remove this student?')) return;
+    students.splice(idx, 1);
+    localStorage.setItem('students', JSON.stringify(students));
+    renderTable('students', students);
+  }
+
+  // Staff add/edit/remove
+  function showAddStaffModal() {
+    currentStaffEditIndex = null;
+    document.getElementById('staffModalTitle').innerText = 'Add Staff Member';
+    document.getElementById('staffUsername').value = '';
+    document.getElementById('staffPassword').value = '';
+    document.getElementById('staffRole').value = 'staff';
+    showModal('editStaffModal');
+  }
+
+  function editStaff(idx) {
+    currentStaffEditIndex = idx;
+    const staff = staffUsers[idx];
+    document.getElementById('staffModalTitle').innerText = 'Edit Staff Member';
+    document.getElementById('staffUsername').value = staff.username;
+    document.getElementById('staffPassword').value = ''; // Blank for security; only change if entered
+    document.getElementById('staffRole').value = staff.isAdmin ? 'admin' : 'staff';
+    showModal('editStaffModal');
+  }
+
+  function saveStaff() {
+    const username = document.getElementById('staffUsername').value.trim();
+    const password = document.getElementById('staffPassword').value;
+    const role = document.getElementById('staffRole').value;
+
+    if (!username) {
+      alert('Username cannot be empty.');
+      return;
+    }
+    if (currentStaffEditIndex === null && !password) {
+      alert('Password cannot be empty for new staff.');
+      return;
+    }
+
+    // Check for username conflicts if adding new or changing username
+    const usernameExists = staffUsers.some((s, idx) => s.username.toLowerCase() === username.toLowerCase() && idx !== currentStaffEditIndex);
+    if (usernameExists) {
+      alert('Username already exists.');
+      return;
+    }
+
+    if (currentStaffEditIndex === null) {
+      // Add new staff
+      staffUsers.push({ username, password, isAdmin: role === 'admin' });
+    } else {
+      // Edit existing staff
+      let staff = staffUsers[currentStaffEditIndex];
+      staff.username = username;
+      if (password) {
+        staff.password = password; // Update password only if entered
+      }
+      staff.isAdmin = role === 'admin';
+    }
+
+    localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
+    renderTable('staff', staffUsers);
+    closeStaffModal();
+  }
 
   function closeStaffModal() {
-    document.getElementById('staffModal').style.display = 'none';
+    currentStaffEditIndex = null;
+    hideModal('editStaffModal');
   }
 
-  // Staff users loaded and editable inline
-  function loadStaffUsers() {
-    const staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    const tbody = document.querySelector('#staffTable tbody');
-    tbody.innerHTML = '';
-    staffUsers.forEach((user, i) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input type="text" value="${user.username}" onchange="updateStaffUsername(${i}, this.value)" /></td>
-        <td><input type="checkbox" ${user.isAdmin ? 'checked' : ''} onchange="updateStaffAdmin(${i}, this.checked)" /></td>
-        <td>
-          <button onclick="removeStaff(${i})" class="remove-btn">Remove</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function updateStaffUsername(index, newUsername) {
-    if (!newUsername.trim()) {
-      alert('Username cannot be empty.');
-      loadStaffUsers();
-      return;
-    }
-    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-
-    // Prevent duplicates
-    if (staffUsers.some((u, i) => i !== index && u.username === newUsername)) {
-      alert('Username already exists.');
-      loadStaffUsers();
-      return;
-    }
-
-    staffUsers[index].username = newUsername.trim();
-    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
-  }
-
-  function updateStaffAdmin(index, isAdminChecked) {
-    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    staffUsers[index].isAdmin = isAdminChecked;
-    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
-  }
-
-  document.getElementById('addStaffBtn').addEventListener('click', () => {
-    const username = document.getElementById('newStaffUsername').value.trim();
-    const password = document.getElementById('newStaffPassword').value;
-    const isAdmin = document.getElementById('newStaffAdmin').checked;
-
-    if (!username || !password) {
-      alert('Username and password are required.');
-      return;
-    }
-
-    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    if (staffUsers.find(u => u.username === username)) {
-      alert('Username already exists.');
-      return;
-    }
-
-    staffUsers.push({ username, password, isAdmin });
-    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
-
-    // Clear inputs
-    document.getElementById('newStaffUsername').value = '';
-    document.getElementById('newStaffPassword').value = '';
-    document.getElementById('newStaffAdmin').checked = false;
-
-    loadStaffUsers();
-  });
-
-  function removeStaff(index) {
+  function removeStaff(idx) {
     if (!confirm('Remove this staff member?')) return;
-    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    staffUsers.splice(index, 1);
-    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
-    loadStaffUsers();
+    staffUsers.splice(idx, 1);
+    localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
+    renderTable('staff', staffUsers);
   }
 
-  // --- Password Reset Requests ---
+  // Password Reset Requests tab
+  function renderPasswordRequests() {
+    const container = document.getElementById('passwordRequestsContainer');
+    container.innerHTML = '';
 
-  function loadPasswordRequests() {
-    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
-    const tbody = document.querySelector('#passwordNoticesTable tbody');
-    tbody.innerHTML = '';
-    requests.forEach((req, i) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${req.username}</td>
-        <td>${new Date(req.requestedAt).toLocaleString()}</td>
-        <td>
-          <button class="success-btn" onclick="openPasswordReset(${i})">Reset Password</button>
-          <button class="remove-btn" onclick="removePasswordRequest(${i})">Dismiss</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
+    if (passwordRequests.length === 0) {
+      document.getElementById('noRequestsMsg').style.display = 'block';
+      return;
+    } else {
+      document.getElementById('noRequestsMsg').style.display = 'none';
+    }
+
+    passwordRequests.forEach((req, idx) => {
+      const div = document.createElement('div');
+      div.classList.add('request-item');
+      div.textContent = `${req.username} - Requested at: ${new Date(req.requestedAt).toLocaleString()}`;
+      div.addEventListener('click', () => openResetPasswordModal(idx));
+      container.appendChild(div);
     });
   }
 
-  function removePasswordRequest(index) {
-    let requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
-    requests.splice(index, 1);
-    localStorage.setItem(passwordRequestsKey, JSON.stringify(requests));
-    loadPasswordRequests();
-  }
-
-  // Password reset modal logic
-  let resetRequestIndex = null;
-
-  function openPasswordReset(requestIndex) {
-    resetRequestIndex = requestIndex;
-    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
-    if (!requests[requestIndex]) return alert('Request not found.');
-
-    document.getElementById('resetUsername').textContent = requests[requestIndex].username;
+  function openResetPasswordModal(idx) {
+    currentResetRequestIndex = idx;
+    const username = passwordRequests[idx].username;
+    document.getElementById('resetUserSpan').textContent = username;
     document.getElementById('newPasswordInput').value = '';
-    document.getElementById('passwordResetModal').style.display = 'block';
+    showModal('resetPassModal');
   }
 
-  function closePasswordResetModal() {
-    document.getElementById('passwordResetModal').style.display = 'none';
-  }
-
-  function confirmPasswordReset() {
-    const newPass = document.getElementById('newPasswordInput').value;
+  function confirmResetPassword() {
+    const newPass = document.getElementById('newPasswordInput').value.trim();
     if (!newPass) {
-      alert('Please enter a new password.');
+      alert('New password cannot be empty.');
       return;
     }
-    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
-    if (!requests[resetRequestIndex]) {
-      alert('Password reset request not found.');
-      closePasswordResetModal();
-      return;
-    }
-    const usernameToReset = requests[resetRequestIndex].username;
 
-    // Update password in staff users
-    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    const userIndex = staffUsers.findIndex(u => u.username === usernameToReset);
-    if (userIndex === -1) {
+    const username = passwordRequests[currentResetRequestIndex].username;
+    const userIdx = staffUsers.findIndex(u => u.username === username);
+
+    if (userIdx === -1) {
       alert('User not found.');
-      closePasswordResetModal();
+      closeResetPassModal();
       return;
     }
-    staffUsers[userIndex].password = newPass;
-    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
 
-    // Remove the request
-    requests.splice(resetRequestIndex, 1);
-    localStorage.setItem(passwordRequestsKey, JSON.stringify(requests));
+    staffUsers[userIdx].password = newPass;
+    localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
 
-    alert(`Password for "${usernameToReset}" has been reset.`);
-    closePasswordResetModal();
-    loadPasswordRequests();
+    // Remove request
+    passwordRequests.splice(currentResetRequestIndex, 1);
+    localStorage.setItem('passwordResetRequests', JSON.stringify(passwordRequests));
+    renderPasswordRequests();
+
+    alert(`Password for ${username} has been reset.`);
+    closeResetPassModal();
+  }
+
+  function closeResetPassModal() {
+    currentResetRequestIndex = null;
+    hideModal('resetPassModal');
+  }
+
+  // Modal show/hide helpers
+  function showModal(id) {
+    document.getElementById(id).style.display = 'block';
+    document.getElementById('modalOverlay').style.display = 'block';
+  }
+  function hideModal(id) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById('modalOverlay').style.display = 'none';
   }
 </script>
-
 </body>
 </html>
