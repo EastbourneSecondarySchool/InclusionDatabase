@@ -30,53 +30,74 @@
 </head>
 <body>
 <script>
+  // Redirect to login if not logged in
   if (!sessionStorage.getItem('loggedInUser')) {
     window.location.href = 'login.html';
   }
 </script>
 
-  <h1>Add New Student Entry</h1>
-  <form id="addStudentForm">
-    <label>Student Name</label>
-    <input type="text" id="name" required />
+<h1>Add New Student Entry</h1>
+<form id="addStudentForm">
+  <label>Student Name</label>
+  <input type="text" id="name" required />
 
-    <label>Roblox Username</label>
-    <input type="text" id="roblox" />
+  <label>Roblox Username</label>
+  <input type="text" id="roblox" />
 
-    <label>Discord Username</label>
-    <input type="text" id="discord" />
+  <label>Discord Username</label>
+  <input type="text" id="discord" />
 
-    <label>Timeout Pass</label>
-    <select id="timeout">
-      <option value="Y">Y</option>
-      <option value="N" selected>N</option>
-    </select>
+  <label>Timeout Pass</label>
+  <select id="timeout">
+    <option value="Y">Y</option>
+    <option value="N" selected>N</option>
+  </select>
 
-    <label>Notes</label>
-    <textarea id="notes"></textarea>
+  <label>Notes</label>
+  <textarea id="notes"></textarea>
 
-    <button type="submit">Add Student</button>
-  </form>
+  <button type="submit">Add Student</button>
+</form>
 
-  <a href="index.html" class="button">Return</a>
+<a href="index.html" class="button">Return</a>
 
-  <script>
-    document.getElementById('addStudentForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const students = JSON.parse(localStorage.getItem('students')) || [];
-      const newStudent = {
-        name: document.getElementById('name').value,
-        roblox: document.getElementById('roblox').value,
-        discord: document.getElementById('discord').value,
-        timeout: document.getElementById('timeout').value,
-        notes: document.getElementById('notes').value,
-        comments: []
-      };
-      students.push(newStudent);
-      localStorage.setItem('students', JSON.stringify(students));
-      alert('Student added.');
-      this.reset();
-    });
-  </script>
+<script>
+  document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const newStudent = {
+      name: document.getElementById('name').value.trim(),
+      roblox: document.getElementById('roblox').value.trim(),
+      discord: document.getElementById('discord').value.trim(),
+      timeout: document.getElementById('timeout').value,
+      notes: document.getElementById('notes').value.trim(),
+      comments: []
+    };
+
+    if (!newStudent.name) {
+      alert('Student name is required.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/add-student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStudent)
+      });
+
+      if (response.ok) {
+        alert('Student added.');
+        this.reset();
+      } else {
+        const errorText = await response.text();
+        alert('Failed to add student: ' + errorText);
+      }
+    } catch (error) {
+      alert('Network error: ' + error.message);
+    }
+  });
+</script>
+
 </body>
 </html>
