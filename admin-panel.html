@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <style>
+    h1, h2 { margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #003366; color: white; }
+    input, button { padding: 8px; margin-top: 10px; width: 100%; }
+    .form-section { margin-bottom: 30px; }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+
+  <div class="form-section">
+    <h2>Add Staff Member</h2>
+    <input type="text" placeholder="Staff Username">
+    <input type="password" placeholder="Staff Password">
+    <button>Add Staff</button>
+  </div>
+
+  <div class="form-section">
+    <h2>All Students Overview</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Roblox</th>
+          <th>Discord</th>
+          <th>Timeout</th>
+          <th>Notes</th>
+          <th>Edit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>John Smith</td>
+          <td>robloxJohn</td>
+          <td>@john#1234</td>
+          <td>Y</td>
+          <td>Struggled in class recently</td>
+          <td><a href="student-details.html?id=1">Edit</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
