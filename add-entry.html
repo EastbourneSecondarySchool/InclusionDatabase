@@ -65,7 +65,7 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
-  // Firebase config
+  // Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
@@ -76,30 +76,21 @@
     measurementId: "G-54LQVPWPJH"
   };
 
-  // Initialize Firebase app & Firestore
-  try {
-    firebase.initializeApp(firebaseConfig);
-    var db = firebase.firestore();
-    console.log('Firebase initialized');
-  } catch (err) {
-    console.error('Firebase init error:', err);
-    alert('Failed to initialize Firebase. Check console.');
-  }
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-  // Form submission
   const form = document.getElementById('addStudentForm');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    console.log('Submit triggered');
 
     const newStudent = {
       name: form.name.value.trim(),
       roblox: form.roblox.value.trim(),
       discord: form.discord.value.trim(),
       timeout: form.timeout.value,
-      notes: form.notes.value.trim(),
-      comments: []
+      notes: form.notes.value.trim()
     };
 
     if (!newStudent.name) {
@@ -108,7 +99,7 @@
     }
 
     try {
-      console.log('Adding student to Firestore:', newStudent);
+      console.log('Adding student:', newStudent);
       await db.collection('students').add(newStudent);
       alert('Student added successfully!');
       form.reset();
