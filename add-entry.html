@@ -65,7 +65,7 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
-  // Your Firebase config
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
@@ -76,19 +76,29 @@
     measurementId: "G-54LQVPWPJH"
   };
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  // Initialize Firebase app & Firestore
+  try {
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
+    console.log('Firebase initialized');
+  } catch (err) {
+    console.error('Firebase init error:', err);
+    alert('Failed to initialize Firebase. Check console.');
+  }
 
-  document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
+  // Form submission
+  const form = document.getElementById('addStudentForm');
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Submit triggered');
 
     const newStudent = {
-      name: document.getElementById('name').value.trim(),
-      roblox: document.getElementById('roblox').value.trim(),
-      discord: document.getElementById('discord').value.trim(),
-      timeout: document.getElementById('timeout').value,
-      notes: document.getElementById('notes').value.trim(),
+      name: form.name.value.trim(),
+      roblox: form.roblox.value.trim(),
+      discord: form.discord.value.trim(),
+      timeout: form.timeout.value,
+      notes: form.notes.value.trim(),
       comments: []
     };
 
@@ -98,10 +108,10 @@
     }
 
     try {
-      console.log('Adding student:', newStudent);
+      console.log('Adding student to Firestore:', newStudent);
       await db.collection('students').add(newStudent);
-      alert('Student added.');
-      this.reset();
+      alert('Student added successfully!');
+      form.reset();
     } catch (error) {
       console.error('Error adding student:', error);
       alert('Failed to add student: ' + error.message);
