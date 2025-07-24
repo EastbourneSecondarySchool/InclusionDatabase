@@ -68,7 +68,8 @@
 
   async function loadTimeoutStudents() {
     try {
-      const snapshot = await db.collection('students').where('timeoutPass', '==', true).get();
+      // Query for students with timeout === 'Y'
+      const snapshot = await db.collection('students').where('timeout', '==', 'Y').get();
       const timeoutStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       const tbody = document.getElementById('timeoutTableBody');
@@ -95,15 +96,17 @@
         nameTd.appendChild(link);
         tr.appendChild(nameTd);
 
-        // Other fields: robloxUser, discordUser, notes
+        // Roblox username
         const robloxTd = document.createElement('td');
-        robloxTd.textContent = student.robloxUser || '';
+        robloxTd.textContent = student.roblox || '';
         tr.appendChild(robloxTd);
 
+        // Discord username
         const discordTd = document.createElement('td');
-        discordTd.textContent = student.discordUser || '';
+        discordTd.textContent = student.discord || '';
         tr.appendChild(discordTd);
 
+        // Notes
         const notesTd = document.createElement('td');
         notesTd.textContent = student.notes || '';
         tr.appendChild(notesTd);
