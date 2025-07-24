@@ -27,6 +27,9 @@
       display: inline-block;
     }
   </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <script>
@@ -62,6 +65,21 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
+  // Your Firebase config (replace with your actual config)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+    authDomain: "pastoraldatabase.firebaseapp.com",
+    projectId: "pastoraldatabase",
+    storageBucket: "pastoraldatabase.firebasestorage.app",
+    messagingSenderId: "859785843482",
+    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+    measurementId: "G-54LQVPWPJH"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
   document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -80,24 +98,13 @@
     }
 
     try {
-      const response = await fetch('/api/add-student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStudent)
-      });
-
-      if (response.ok) {
-        alert('Student added.');
-        this.reset();
-      } else {
-        const errorText = await response.text();
-        alert('Failed to add student: ' + errorText);
-      }
+      await db.collection('students').add(newStudent);
+      alert('Student added.');
+      this.reset();
     } catch (error) {
-      alert('Network error: ' + error.message);
+      alert('Failed to add student: ' + error.message);
     }
   });
 </script>
-
 </body>
 </html>
