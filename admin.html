@@ -34,7 +34,7 @@
       padding: 0 20px;
     }
 
-    h1, h2 {
+    h1, h2, h3, h4 {
       text-align: center;
     }
 
@@ -90,7 +90,7 @@
       text-align: center;
     }
 
-    #editModal {
+    #editModal, #staffModal {
       display: none;
       position: fixed;
       top: 10%;
@@ -106,15 +106,6 @@
       color: var(--text-color);
     }
 
-    #editModal input, #editModal textarea {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      background: transparent;
-      color: var(--text-color);
-      border: 1px solid var(--table-border);
-    }
-
     #modalOverlay {
       display: none;
       position: fixed;
@@ -127,6 +118,23 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    #manageStaffBtn {
+      background-color: #28a745; /* green button */
+    }
+
+    input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: transparent;
+      color: var(--text-color);
+      border: 1px solid var(--table-border);
+      box-sizing: border-box;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -145,6 +153,7 @@
 <div class="top-bar">
   <input type="text" id="searchBar" placeholder="Search students by name...">
   <button onclick="toggleTheme()">Toggle Light/Dark</button>
+  <button id="manageStaffBtn">Manage Staff</button>
 </div>
 
 <table id="adminStudentTable">
@@ -163,7 +172,7 @@
 
 <button id="returnBtn" onclick="window.location.href='index.html'">Return</button>
 
-<!-- Edit Modal -->
+<!-- Edit Student Modal -->
 <div id="modalOverlay"></div>
 <div id="editModal">
   <h3>Edit Student</h3>
@@ -176,11 +185,29 @@
   <button onclick="closeEdit()">Cancel</button>
 </div>
 
+<!-- Staff Management Modal -->
+<div id="staffModal">
+  <h3>Manage Staff</h3>
+  <table id="staffTable" style="width:100%; margin-bottom: 10px;">
+    <thead>
+      <tr><th>Username</th><th>Admin</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h4>Add New Staff</h4>
+  <input type="text" id="newStaffUsername" placeholder="Username" />
+  <input type="password" id="newStaffPassword" placeholder="Password" />
+  <label><input type="checkbox" id="newStaffAdmin" /> Admin</label><br />
+  <button id="addStaffBtn">Add Staff</button>
+  <button onclick="closeStaffModal()">Close</button>
+</div>
+
 <script>
   let students = [];
   let currentEditIndex = null;
+  const staffKey = 'staffUsers';
 
-  // Load saved theme and students
+  // Load saved theme and data
   document.addEventListener('DOMContentLoaded', () => {
     const theme = localStorage.getItem('theme');
     if (theme === 'dark') {
@@ -206,16 +233,12 @@
     const tbody = document.querySelector('#adminStudentTable tbody');
     tbody.innerHTML = '';
     data.forEach((student, index) => {
-      const timeoutVal = student.timeout || 'N';
-      const robloxVal = student.roblox || '';
-      const discordVal = student.discord || '';
-
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${student.name}</td>
-        <td>${robloxVal}</td>
-        <td>${discordVal}</td>
-        <td>${timeoutVal}</td>
+        <td>${student.roblox || student.robloxUser || ''}</td>
+        <td>${student.discord || student.discordUser || ''}</td>
+        <td>${student.timeout === 'Y' || student.timeoutPass ? 'Y' : 'N'}</td>
         <td>${student.notes || ''}</td>
         <td>
           <button onclick="editStudent(${index})">Edit</button>
@@ -228,10 +251,9 @@
 
   function sortTable(colIndex) {
     students.sort((a, b) => {
-      const keys = ['name', 'roblox', 'discord', 'timeout', 'notes'];
-      const aVal = (a[keys[colIndex]] || '').toString().toLowerCase();
-      const bVal = (b[keys[colIndex]] || '').toString().toLowerCase();
-      return aVal.localeCompare(bVal);
+      const aVal = Object.values(a)[colIndex] || '';
+      const bVal = Object.values(b)[colIndex] || '';
+      return aVal.toString().localeCompare(bVal.toString());
     });
     renderTable(students);
   }
@@ -247,9 +269,9 @@
     currentEditIndex = index;
     const s = students[index];
     document.getElementById('editName').value = s.name;
-    document.getElementById('editRoblox').value = s.roblox || '';
-    document.getElementById('editDiscord').value = s.discord || '';
-    document.getElementById('editTimeout').checked = (s.timeout === 'Y');
+    document.getElementById('editRoblox').value = s.roblox || s.robloxUser || '';
+    document.getElementById('editDiscord').value = s.discord || s.discordUser || '';
+    document.getElementById('editTimeout').checked = s.timeout === 'Y' || s.timeoutPass === 'Y';
     document.getElementById('editNotes').value = s.notes || '';
     document.getElementById('modalOverlay').style.display = 'block';
     document.getElementById('editModal').style.display = 'block';
@@ -261,19 +283,85 @@
   }
 
   function saveEdit() {
-    if (currentEditIndex === null) return;
-
+    const name = document.getElementById('editName').value.trim();
+    if (!name) {
+      alert('Name is required.');
+      return;
+    }
     students[currentEditIndex] = {
-      name: document.getElementById('editName').value.trim(),
-      roblox: document.getElementById('editRoblox').value.trim(),
-      discord: document.getElementById('editDiscord').value.trim(),
-      timeout: document.getElementById('editTimeout').checked ? 'Y' : 'N',
-      notes: document.getElementById('editNotes').value.trim(),
+      name,
+      robloxUser: document.getElementById('editRoblox').value.trim(),
+      discordUser: document.getElementById('editDiscord').value.trim(),
+      timeoutPass: document.getElementById('editTimeout').checked ? 'Y' : 'N',
+      notes: document.getElementById('editNotes').value.trim()
     };
-
     localStorage.setItem('students', JSON.stringify(students));
-    renderTable(students);
     closeEdit();
+    renderTable(students);
+  }
+
+  // --- Staff Management ---
+
+  document.getElementById('manageStaffBtn').addEventListener('click', () => {
+    loadStaffUsers();
+    document.getElementById('staffModal').style.display = 'block';
+  });
+
+  function closeStaffModal() {
+    document.getElementById('staffModal').style.display = 'none';
+  }
+
+  function loadStaffUsers() {
+    const staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+    const tbody = document.querySelector('#staffTable tbody');
+    tbody.innerHTML = '';
+    staffUsers.forEach((user, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${user.username}</td>
+        <td>${user.isAdmin ? 'Yes' : 'No'}</td>
+        <td>
+          <button onclick="removeStaff(${i})" class="remove-btn">Remove</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('addStaffBtn').addEventListener('click', () => {
+    const username = document.getElementById('newStaffUsername').value.trim();
+    const password = document.getElementById('newStaffPassword').value;
+    const isAdmin = document.getElementById('newStaffAdmin').checked;
+
+    if (!username || !password) {
+      alert('Username and password are required.');
+      return;
+    }
+
+    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+    if (staffUsers.find(u => u.username === username)) {
+      alert('Username already exists.');
+      return;
+    }
+
+    // Note: Passwords stored in plain text in localStorage, not secure for production!
+    staffUsers.push({ username, password, isAdmin });
+    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
+
+    // Clear inputs
+    document.getElementById('newStaffUsername').value = '';
+    document.getElementById('newStaffPassword').value = '';
+    document.getElementById('newStaffAdmin').checked = false;
+
+    loadStaffUsers();
+  });
+
+  function removeStaff(index) {
+    if (!confirm('Remove this staff member?')) return;
+    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+    staffUsers.splice(index, 1);
+    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
+    loadStaffUsers();
   }
 </script>
 
