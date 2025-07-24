@@ -88,8 +88,9 @@
       window.location.href = 'student-list.html';
     }
 
-    const students = JSON.parse(localStorage.getItem('students')) || [];
-    const student = students[studentId];
+    // Always load latest students from localStorage when page loads
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    let student = students[studentId];
 
     if (!student) {
       alert('Student not found.');
@@ -131,6 +132,11 @@
 
     document.getElementById('studentForm').addEventListener('submit', function(e) {
       e.preventDefault();
+
+      // Reload students to get any changes from elsewhere
+      students = JSON.parse(localStorage.getItem('students')) || [];
+      student = students[studentId];
+
       student.name = nameInput.value;
       student.roblox = robloxInput.value;
       student.discord = discordInput.value;
@@ -144,11 +150,19 @@
 
     document.getElementById('addCommentForm').addEventListener('submit', function(e) {
       e.preventDefault();
+
+      // Reload students and student again before updating
+      students = JSON.parse(localStorage.getItem('students')) || [];
+      student = students[studentId];
+
       const newComment = document.getElementById('newComment').value.trim();
       if (newComment) {
         if (!student.comments) student.comments = [];
         student.comments.push(newComment);
+
+        students[studentId] = student;
         localStorage.setItem('students', JSON.stringify(students));
+
         document.getElementById('newComment').value = '';
         renderComments();
       }
