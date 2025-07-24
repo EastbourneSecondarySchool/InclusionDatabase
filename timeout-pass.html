@@ -32,49 +32,71 @@
   }
 </script>
 
-  <h1>Timeout Pass List</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Student Name</th>
-        <th>Roblox User</th>
-        <th>Discord User</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody id="timeoutTableBody"></tbody>
-  </table>
+<h1>Timeout Pass List</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Student Name</th>
+      <th>Roblox User</th>
+      <th>Discord User</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="timeoutTableBody"></tbody>
+</table>
 
-  <a href="index.html" class="button">Return</a>
+<a href="index.html" class="button">Return</a>
 
-  <script>
-    function loadTimeoutStudents() {
-      const students = JSON.parse(localStorage.getItem('students')) || [];
+<script>
+  async function loadTimeoutStudents() {
+    try {
+      const res = await fetch('/api/students');
+      if (!res.ok) throw new Error('Failed to load students: ' + res.statusText);
+      const students = await res.json();
+
       const tbody = document.getElementById('timeoutTableBody');
       tbody.innerHTML = '';
-      students.forEach((student, index) => {
-        if (student.timeout === 'Y') {
-          const tr = document.createElement('tr');
 
-          // Name clickable to details
-          const nameTd = document.createElement('td');
-          const link = document.createElement('a');
-          link.href = `student-details.html?id=${index}`;
-          link.textContent = student.name;
-          nameTd.appendChild(link);
-          tr.appendChild(nameTd);
+      const timeoutStudents = students.filter(s => s.timeout === 'Y');
 
-          ['roblox', 'discord', 'notes'].forEach(field => {
-            const td = document.createElement('td');
-            td.textContent = student[field] || '';
-            tr.appendChild(td);
-          });
+      if (timeoutStudents.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.textContent = 'No students with timeout pass.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
 
-          tbody.appendChild(tr);
-        }
+      timeoutStudents.forEach((student, index) => {
+        const tr = document.createElement('tr');
+
+        // Name clickable to details (index is the position in filtered array, not original)
+        // We want original index, so find it:
+        const originalIndex = students.indexOf(student);
+
+        const nameTd = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = `student-details.html?id=${encodeURIComponent(originalIndex)}`;
+        link.textContent = student.name || '(No Name)';
+        nameTd.appendChild(link);
+        tr.appendChild(nameTd);
+
+        ['roblox', 'discord', 'notes'].forEach(field => {
+          const td = document.createElement('td');
+          td.textContent = student[field] || '';
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
       });
+    } catch (error) {
+      alert(error.message);
     }
-    loadTimeoutStudents();
-  </script>
+  }
+
+  loadTimeoutStudents();
+</script>
 </body>
 </html>
