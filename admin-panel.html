@@ -14,29 +14,6 @@
     h1, h2 {
       text-align: center;
     }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background: #0066cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button.remove-btn {
-      background: #cc3300;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -49,34 +26,40 @@
       padding: 8px;
       text-align: left;
     }
+    button {
+      padding: 8px 12px;
+      background-color: #cc3300;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
     #returnBtn {
       display: block;
       margin: 30px auto 0 auto;
       width: 150px;
       text-align: center;
       background-color: #444;
-    }
-    .error {
-      color: red;
-      margin-top: 10px;
-      text-align: center;
+      padding: 10px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-<h1>Admin Panel - ESS Pastoral Database</h1>
 
-<section>
-  <h2>Add Staff User</h2>
-  <form id="addStaffForm">
-    <label for="staffUsername">Username</label>
-    <input type="text" id="staffUsername" required />
-    <label for="staffPassword">Password</label>
-    <input type="password" id="staffPassword" required />
-    <button type="submit">Add Staff User</button>
-  </form>
-  <div id="staffMsg" class="error"></div>
-</section>
+<!-- 🔐 Admin-only access check -->
+<script>
+  const loggedUser = sessionStorage.getItem('loggedInUser');
+  const isAdmin = sessionStorage.getItem('isAdmin');
+  if (!loggedUser || isAdmin !== 'true') {
+    window.location.href = 'admin-login.html';
+  }
+</script>
+
+<h1>Admin Panel - ESS Pastoral Database</h1>
 
 <section>
   <h2>All Students</h2>
@@ -97,44 +80,10 @@
   </table>
 </section>
 
+<!-- Return to homepage -->
 <button id="returnBtn" onclick="window.location.href='index.html'">Return</button>
 
 <script>
-  // Staff user form handling
-  const addStaffForm = document.getElementById('addStaffForm');
-  const staffMsg = document.getElementById('staffMsg');
-
-  addStaffForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    staffMsg.textContent = '';
-
-    const username = document.getElementById('staffUsername').value.trim();
-    const password = document.getElementById('staffPassword').value;
-
-    if (!username || !password) {
-      staffMsg.textContent = 'Please enter both username and password.';
-      return;
-    }
-
-    // Load existing staff users or empty array
-    let staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
-
-    // Check if username already exists
-    if (staffUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-      staffMsg.textContent = 'That username already exists.';
-      return;
-    }
-
-    // Add new staff user
-    staffUsers.push({ username, password });
-    localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
-
-    staffMsg.style.color = 'green';
-    staffMsg.textContent = `Staff user "${username}" added successfully!`;
-    addStaffForm.reset();
-  });
-
-  // Student management
   function loadAllStudentsAdmin() {
     const students = JSON.parse(localStorage.getItem('students')) || [];
     const tbody = document.getElementById('adminStudentTable').querySelector('tbody');
@@ -142,7 +91,6 @@
 
     students.forEach((student, index) => {
       const tr = document.createElement('tr');
-
       tr.innerHTML = `
         <td>${student.name}</td>
         <td>${student.robloxUser || ''}</td>
@@ -150,10 +98,9 @@
         <td>${student.timeoutPass ? 'Y' : 'N'}</td>
         <td>${student.notes || ''}</td>
         <td>
-          <button class="remove-btn" onclick="removeStudent(${index})">Remove</button>
+          <button onclick="removeStudent(${index})">Remove</button>
         </td>
       `;
-
       tbody.appendChild(tr);
     });
   }
