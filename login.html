@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Login</title>
+  <title>Login</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -58,7 +58,7 @@
     }
     sessionStorage.setItem('loggedInUser', user.username);
     sessionStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
-    window.location.href = 'admin-panel.html';
+    window.location.href = 'index.html';
   });
 
   // Forgot Password feature
