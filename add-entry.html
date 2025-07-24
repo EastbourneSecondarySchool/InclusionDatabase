@@ -1,40 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Entry</title>
   <style>
-    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
-    input, textarea { display: block; margin-bottom: 10px; width: 100%; }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button, a.button {
+      margin-top: 20px;
+      background: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
-  <h1>Add Student</h1>
-  <form id="addForm">
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="text" id="roblox" placeholder="Roblox User">
-    <input type="text" id="discord" placeholder="Discord User">
-    <input type="text" id="timeout" placeholder="Timeout Pass (Y/N)">
-    <textarea id="notes" placeholder="Notes"></textarea>
+  <h1>Add New Student Entry</h1>
+  <form id="addStudentForm">
+    <label>Student Name</label>
+    <input type="text" id="name" required />
+
+    <label>Roblox Username</label>
+    <input type="text" id="roblox" />
+
+    <label>Discord Username</label>
+    <input type="text" id="discord" />
+
+    <label>Timeout Pass</label>
+    <select id="timeout">
+      <option value="Y">Y</option>
+      <option value="N" selected>N</option>
+    </select>
+
+    <label>Notes</label>
+    <textarea id="notes"></textarea>
+
     <button type="submit">Add Student</button>
   </form>
+
   <a href="index.html" class="button">Return</a>
 
   <script>
-    document.getElementById('addForm').onsubmit = function(e) {
+    document.getElementById('addStudentForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const students = JSON.parse(localStorage.getItem('students')) || [];
-      students.push({
+      const newStudent = {
         name: document.getElementById('name').value,
         roblox: document.getElementById('roblox').value,
         discord: document.getElementById('discord').value,
         timeout: document.getElementById('timeout').value,
         notes: document.getElementById('notes').value,
         comments: []
-      });
+      };
+      students.push(newStudent);
       localStorage.setItem('students', JSON.stringify(students));
-      alert("Student Added!");
-      window.location.href = "student-list.html";
-    };
+      alert('Student added.');
+      this.reset();
+    });
   </script>
 </body>
 </html>
