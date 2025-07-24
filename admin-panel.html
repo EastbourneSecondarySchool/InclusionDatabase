@@ -64,15 +64,6 @@
   </style>
 </head>
 <body>
-<script>
-  // Require login and admin access
-  const loggedUser = sessionStorage.getItem('loggedInUser');
-  const isAdmin = sessionStorage.getItem('isAdmin');
-  if (!loggedUser || isAdmin !== 'true') {
-    window.location.href = 'login.html';
-  }
-</script>
-
 <h1>Admin Panel - ESS Pastoral Database</h1>
 
 <section>
