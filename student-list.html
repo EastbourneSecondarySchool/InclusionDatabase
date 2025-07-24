@@ -1,30 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student List</title>
   <style>
-    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
-    table { margin-top: 20px; width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    button, a.button {
+      margin-top: 20px;
+      background: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
   <h1>Student List</h1>
-  <table id="studentTable">
-    <tr><th>Name</th><th>Roblox</th><th>Discord</th><th>Timeout</th><th>Notes</th></tr>
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Roblox User</th>
+        <th>Discord User</th>
+        <th>Timeout Pass (Y/N)</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody id="studentTableBody"></tbody>
   </table>
+
   <a href="index.html" class="button">Return</a>
 
   <script>
-    const students = JSON.parse(localStorage.getItem('students')) || [];
-    const table = document.getElementById('studentTable');
+    function loadStudents() {
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      const tbody = document.getElementById('studentTableBody');
+      tbody.innerHTML = '';
+      students.forEach((student, index) => {
+        const tr = document.createElement('tr');
 
-    students.forEach((s, index) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td><a href="student-details.html?index=${index}">${s.name}</a></td>
-                       <td>${s.roblox}</td><td>${s.discord}</td><td>${s.timeout}</td><td>${s.notes}</td>`;
-      table.appendChild(row);
-    });
+        // Name with clickable link to details
+        const nameTd = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = `student-details.html?id=${index}`;
+        link.textContent = student.name;
+        nameTd.appendChild(link);
+        tr.appendChild(nameTd);
+
+        // Other fields
+        ['roblox', 'discord', 'timeout', 'notes'].forEach(field => {
+          const td = document.createElement('td');
+          td.textContent = student[field] || '';
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+    loadStudents();
   </script>
 </body>
 </html>
