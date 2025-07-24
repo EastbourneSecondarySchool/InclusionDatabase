@@ -65,7 +65,7 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
-  // Your Firebase config
+  // Firebase config (replace with your actual config)
   const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
@@ -80,17 +80,17 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const form = document.getElementById('addStudentForm');
-
-  form.addEventListener('submit', async (e) => {
+  document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Build student object with consistent field names
     const newStudent = {
-      name: form.name.value.trim(),
-      roblox: form.roblox.value.trim(),
-      discord: form.discord.value.trim(),
-      timeout: form.timeout.value,
-      notes: form.notes.value.trim()
+      name: document.getElementById('name').value.trim(),
+      roblox: document.getElementById('roblox').value.trim(),
+      discord: document.getElementById('discord').value.trim(),
+      timeout: document.getElementById('timeout').value, // "Y" or "N"
+      notes: document.getElementById('notes').value.trim(),
+      comments: []  // empty array for future use if needed
     };
 
     if (!newStudent.name) {
@@ -99,12 +99,11 @@
     }
 
     try {
-      console.log('Adding student:', newStudent);
+      // Add new student document to Firestore 'students' collection
       await db.collection('students').add(newStudent);
-      alert('Student added successfully!');
-      form.reset();
+      alert('Student added successfully.');
+      this.reset();
     } catch (error) {
-      console.error('Error adding student:', error);
       alert('Failed to add student: ' + error.message);
     }
   });
