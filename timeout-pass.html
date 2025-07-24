@@ -24,6 +24,9 @@
       display: inline-block;
     }
   </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <script>
@@ -48,16 +51,28 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+    authDomain: "pastoraldatabase.firebaseapp.com",
+    projectId: "pastoraldatabase",
+    storageBucket: "pastoraldatabase.firebasestorage.app",
+    messagingSenderId: "859785843482",
+    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+    measurementId: "G-54LQVPWPJH"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
   async function loadTimeoutStudents() {
     try {
-      const res = await fetch('/api/students');
-      if (!res.ok) throw new Error('Failed to load students: ' + res.statusText);
-      const students = await res.json();
+      const snapshot = await db.collection('students').where('timeoutPass', '==', true).get();
+      const timeoutStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       const tbody = document.getElementById('timeoutTableBody');
       tbody.innerHTML = '';
-
-      const timeoutStudents = students.filter(s => s.timeout === 'Y');
 
       if (timeoutStudents.length === 0) {
         const tr = document.createElement('tr');
@@ -69,30 +84,34 @@
         return;
       }
 
-      timeoutStudents.forEach((student, index) => {
+      timeoutStudents.forEach(student => {
         const tr = document.createElement('tr');
 
-        // Name clickable to details (index is the position in filtered array, not original)
-        // We want original index, so find it:
-        const originalIndex = students.indexOf(student);
-
+        // Name with clickable link to details page using Firestore doc id
         const nameTd = document.createElement('td');
         const link = document.createElement('a');
-        link.href = `student-details.html?id=${encodeURIComponent(originalIndex)}`;
+        link.href = `student-details.html?id=${encodeURIComponent(student.id)}`;
         link.textContent = student.name || '(No Name)';
         nameTd.appendChild(link);
         tr.appendChild(nameTd);
 
-        ['roblox', 'discord', 'notes'].forEach(field => {
-          const td = document.createElement('td');
-          td.textContent = student[field] || '';
-          tr.appendChild(td);
-        });
+        // Other fields: robloxUser, discordUser, notes
+        const robloxTd = document.createElement('td');
+        robloxTd.textContent = student.robloxUser || '';
+        tr.appendChild(robloxTd);
+
+        const discordTd = document.createElement('td');
+        discordTd.textContent = student.discordUser || '';
+        tr.appendChild(discordTd);
+
+        const notesTd = document.createElement('td');
+        notesTd.textContent = student.notes || '';
+        tr.appendChild(notesTd);
 
         tbody.appendChild(tr);
       });
     } catch (error) {
-      alert(error.message);
+      alert('Error loading timeout students: ' + error.message);
     }
   }
 
