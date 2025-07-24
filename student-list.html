@@ -33,9 +33,6 @@
       display: inline-block;
     }
   </style>
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <script>
@@ -61,30 +58,16 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
-  // Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-    authDomain: "pastoraldatabase.firebaseapp.com",
-    projectId: "pastoraldatabase",
-    storageBucket: "pastoraldatabase.firebasestorage.app",
-    messagingSenderId: "859785843482",
-    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-    measurementId: "G-54LQVPWPJH"
-  };
-
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
   async function loadStudents() {
     try {
-      const snapshot = await db.collection('students').get();
-      const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const res = await fetch('/api/students');
+      if (!res.ok) throw new Error('Failed to load students: ' + res.statusText);
+      const students = await res.json();
 
       const tbody = document.getElementById('studentTableBody');
       tbody.innerHTML = '';
 
-      if (students.length === 0) {
+      if (!Array.isArray(students) || students.length === 0) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
         td.colSpan = 5;
@@ -97,27 +80,30 @@
       students.forEach((student, index) => {
         const tr = document.createElement('tr');
 
-        // Name with clickable link to details page with Firestore doc id as param
+        // Name with clickable link to details
         const nameTd = document.createElement('td');
         const link = document.createElement('a');
-        link.href = `student-details.html?id=${encodeURIComponent(student.id)}`;
+        link.href = `student-details.html?id=${encodeURIComponent(index)}`;
         link.textContent = student.name || '(No Name)';
         nameTd.appendChild(link);
         tr.appendChild(nameTd);
 
-        // Other fields
+        // Roblox username
         const robloxTd = document.createElement('td');
-        robloxTd.textContent = student.robloxUser || '';
+        robloxTd.textContent = student.roblox || '';
         tr.appendChild(robloxTd);
 
+        // Discord username
         const discordTd = document.createElement('td');
-        discordTd.textContent = student.discordUser || '';
+        discordTd.textContent = student.discord || '';
         tr.appendChild(discordTd);
 
+        // Timeout Pass (Y/N)
         const timeoutTd = document.createElement('td');
-        timeoutTd.textContent = student.timeoutPass ? 'Y' : 'N';
+        timeoutTd.textContent = student.timeout || '';
         tr.appendChild(timeoutTd);
 
+        // Notes
         const notesTd = document.createElement('td');
         notesTd.textContent = student.notes || '';
         tr.appendChild(notesTd);
@@ -125,7 +111,7 @@
         tbody.appendChild(tr);
       });
     } catch (error) {
-      alert('Error loading students: ' + error.message);
+      alert(error.message);
     }
   }
 
