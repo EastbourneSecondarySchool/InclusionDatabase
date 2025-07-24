@@ -33,7 +33,7 @@
 </head>
 <body>
 
-<h2>Admin Login</h2>
+<h2>Website Login</h2>
 <input type="text" id="usernameInput" placeholder="Username" />
 <input type="password" id="passwordInput" placeholder="Password" />
 <button id="loginBtn">Login</button>
@@ -42,17 +42,6 @@
 <script>
   const staffKey = 'staffUsers';
   const passwordRequestsKey = 'passwordResetRequests';
-
-  // Redirect if already logged in
-  const loggedUser = sessionStorage.getItem('loggedInUser');
-  const isAdmin = sessionStorage.getItem('isAdmin');
-  if (loggedUser) {
-    if (isAdmin === 'true') {
-      window.location.href = 'admin-panel.html'; // update this if your admin page has a different name
-    } else {
-      window.location.href = 'index.html'; // user homepage
-    }
-  }
 
   document.getElementById('loginBtn').addEventListener('click', () => {
     const username = document.getElementById('usernameInput').value.trim();
@@ -69,12 +58,7 @@
     }
     sessionStorage.setItem('loggedInUser', user.username);
     sessionStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
-
-    if (user.isAdmin) {
-      window.location.href = 'admin.html';
-    } else {
-      window.location.href = 'index.html';
-    }
+    window.location.href = 'index.html';  // Always redirect to main homepage after login
   });
 
   // Forgot Password feature
