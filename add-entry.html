@@ -1,37 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add New Student</title>
+  <title>Add Entry</title>
   <style>
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, textarea, select { width: 100%; padding: 8px; margin-bottom: 10px; }
-    button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; }
+    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
+    input, textarea { display: block; margin-bottom: 10px; width: 100%; }
   </style>
 </head>
 <body>
-  <h1>Add New Student Entry</h1>
-  <form>
-    <label>Student Name</label>
-    <input type="text" placeholder="Enter student name" />
-
-    <label>Roblox Username</label>
-    <input type="text" placeholder="Enter Roblox username" />
-
-    <label>Discord Username</label>
-    <input type="text" placeholder="Enter Discord username" />
-
-    <label>Timeout Pass</label>
-    <select>
-      <option value="Y">Y</option>
-      <option value="N">N</option>
-    </select>
-
-    <label>Notes</label>
-    <textarea placeholder="Enter notes about the student"></textarea>
-
+  <h1>Add Student</h1>
+  <form id="addForm">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="text" id="roblox" placeholder="Roblox User">
+    <input type="text" id="discord" placeholder="Discord User">
+    <input type="text" id="timeout" placeholder="Timeout Pass (Y/N)">
+    <textarea id="notes" placeholder="Notes"></textarea>
     <button type="submit">Add Student</button>
   </form>
+  <a href="index.html" class="button">Return</a>
+
+  <script>
+    document.getElementById('addForm').onsubmit = function(e) {
+      e.preventDefault();
+      const students = JSON.parse(localStorage.getItem('students')) || [];
+      students.push({
+        name: document.getElementById('name').value,
+        roblox: document.getElementById('roblox').value,
+        discord: document.getElementById('discord').value,
+        timeout: document.getElementById('timeout').value,
+        notes: document.getElementById('notes').value,
+        comments: []
+      });
+      localStorage.setItem('students', JSON.stringify(students));
+      alert("Student Added!");
+      window.location.href = "student-list.html";
+    };
+  </script>
 </body>
 </html>
