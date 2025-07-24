@@ -1,14 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Panel</title>
   <style>
-    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    button, a.button {
+      margin-top: 20px;
+      background: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>Admin Panel</h1>
-  <p>Here you can view/edit all student data. (Feature to add more staff users can be added here.)</p>
+  <h2>Current Staff Users</h2>
+  <ul id="staffList"></ul>
+
+  <h2>Add Staff User</h2>
+  <form id="addStaffForm">
+    <label>Username</label>
+    <input type="text" id="staffUsername" required />
+    <label>Password</label>
+    <input type="password" id="staffPassword" required />
+    <button type="submit">Add Staff User</button>
+  </form>
+
   <a href="index.html" class="button">Return</a>
+
+  <script>
+    function loadStaff() {
+      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
+      const ul = document.getElementById('staffList');
+      ul.innerHTML = '';
+      staffUsers.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = `Username: ${user.username}`;
+        ul.appendChild(li);
+      });
+    }
+
+    document.getElementById('addStaffForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
+      const username = document.getElementById('staffUsername').value;
+      const password = document.getElementById('staffPassword').value;
+      staffUsers.push({ username, password });
+      localStorage.setItem('staffUsers', JSON.stringify(staffUsers));
+      alert('Staff user added.');
+      this.reset();
+      loadStaff();
+    });
+
+    loadStaff();
+  </script>
 </body>
 </html>
