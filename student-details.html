@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Details</title>
+  <style>
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { padding: 10px 20px; background-color: #0066cc; color: white; border: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Edit Student Details</h1>
+  <form>
+    <label>Student Name</label>
+    <input type="text" value="John Smith" />
+
+    <label>Roblox Username</label>
+    <input type="text" value="robloxJohn" />
+
+    <label>Discord Username</label>
+    <input type="text" value="@john#1234" />
+
+    <label>Timeout Pass</label>
+    <select>
+      <option value="Y">Y</option>
+      <option value="N">N</option>
+    </select>
+
+    <label>Notes</label>
+    <textarea>Struggled in class recently</textarea>
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <h2>Add Staff Comment</h2>
+  <textarea placeholder="Enter comment..."></textarea><br>
+  <button>Add Comment</button>
+</body>
+</html>
