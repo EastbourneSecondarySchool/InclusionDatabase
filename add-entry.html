@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Student</title>
+  <style>
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Add New Student Entry</h1>
+  <form>
+    <label>Student Name</label>
+    <input type="text" placeholder="Enter student name" />
+
+    <label>Roblox Username</label>
+    <input type="text" placeholder="Enter Roblox username" />
+
+    <label>Discord Username</label>
+    <input type="text" placeholder="Enter Discord username" />
+
+    <label>Timeout Pass</label>
+    <select>
+      <option value="Y">Y</option>
+      <option value="N">N</option>
+    </select>
+
+    <label>Notes</label>
+    <textarea placeholder="Enter notes about the student"></textarea>
+
+    <button type="submit">Add Student</button>
+  </form>
+</body>
+</html>
