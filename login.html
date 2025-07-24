@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       max-width: 400px;
-      margin: 50px auto;
+      margin: 100px auto;
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -22,63 +22,67 @@
       width: 100%;
       padding: 8px;
       margin-top: 5px;
-      box-sizing: border-box;
     }
     button {
       margin-top: 20px;
       width: 100%;
-      padding: 10px;
-      background-color: #0066cc;
-      border: none;
+      padding: 12px;
+      background: #0066cc;
       color: white;
-      font-size: 16px;
+      border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 1rem;
     }
     .error {
       color: red;
       margin-top: 15px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>Staff Login</h1>
+  <h2>Staff Login</h2>
   <form id="loginForm">
     <label for="username">Username</label>
-    <input type="text" id="username" required autocomplete="username" />
+    <input type="text" id="username" autocomplete="username" required />
     <label for="password">Password</label>
-    <input type="password" id="password" required autocomplete="current-password" />
+    <input type="password" id="password" autocomplete="current-password" required />
     <button type="submit">Log In</button>
+    <div id="errorMsg" class="error"></div>
   </form>
-  <div class="error" id="errorMsg"></div>
 
   <script>
-    // Initialize staff users with default admin if none exist
-    if (!localStorage.getItem('staffUsers')) {
-      localStorage.setItem('staffUsers', JSON.stringify([
-        { username: 'Admin', password: 'EastbournePastoralAdmin' }
-      ]));
-    }
+    const adminUsername = "Admin";
+    const adminPassword = "EastbournePastoralAdmin";
 
-    const form = document.getElementById('loginForm');
-    const errorMsg = document.getElementById('errorMsg');
-
-    form.addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
+
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
-
-      const user = staffUsers.find(u => u.username === username && u.password === password);
-
-      if (user) {
-        // Save login session (simple flag)
+      // Check admin credentials first
+      if (username === adminUsername && password === adminPassword) {
         sessionStorage.setItem('loggedInUser', username);
+        sessionStorage.setItem('isAdmin', 'true');
         window.location.href = 'index.html';
-      } else {
-        errorMsg.textContent = 'Invalid username or password.';
+        return;
       }
+
+      // Check staff users in localStorage
+      const staffUsers = JSON.parse(localStorage.getItem('staffUsers')) || [];
+      const matchedUser = staffUsers.find(user => user.username === username && user.password === password);
+
+      if (matchedUser) {
+        sessionStorage.setItem('loggedInUser', username);
+        sessionStorage.setItem('isAdmin', 'false');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // If no match, show error
+      document.getElementById('errorMsg').textContent = 'Invalid username or password.';
     });
   </script>
 </body>
