@@ -64,7 +64,7 @@
       if (!res.ok) throw new Error('Failed to load students: ' + res.statusText);
       const students = await res.json();
 
-      console.log('Loaded students:', students);  // Debugging line
+      console.log('Students data:', students);  // <-- DEBUG LOG HERE
 
       const tbody = document.getElementById('studentTableBody');
       tbody.innerHTML = '';
@@ -92,17 +92,17 @@
 
         // Roblox username
         const robloxTd = document.createElement('td');
-        robloxTd.textContent = student.robloxUser || '';
+        robloxTd.textContent = student.roblox || ''; // <-- Update this key if your data uses a different property name
         tr.appendChild(robloxTd);
 
         // Discord username
         const discordTd = document.createElement('td');
-        discordTd.textContent = student.discordUser || '';
+        discordTd.textContent = student.discord || ''; // <-- Update this key if your data uses a different property name
         tr.appendChild(discordTd);
 
         // Timeout Pass (Y/N)
         const timeoutTd = document.createElement('td');
-        timeoutTd.textContent = student.timeoutPass ? 'Y' : 'N';
+        timeoutTd.textContent = student.timeout || '';
         tr.appendChild(timeoutTd);
 
         // Notes
