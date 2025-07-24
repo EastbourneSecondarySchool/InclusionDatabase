@@ -1,41 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Details</title>
   <style>
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
-    button { padding: 10px 20px; background-color: #0066cc; color: white; border: none; border-radius: 5px; }
+    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
+    input, textarea { display: block; margin-bottom: 10px; width: 100%; }
   </style>
 </head>
 <body>
-  <h1>Edit Student Details</h1>
-  <form>
-    <label>Student Name</label>
-    <input type="text" value="John Smith" />
-
-    <label>Roblox Username</label>
-    <input type="text" value="robloxJohn" />
-
-    <label>Discord Username</label>
-    <input type="text" value="@john#1234" />
-
-    <label>Timeout Pass</label>
-    <select>
-      <option value="Y">Y</option>
-      <option value="N">N</option>
-    </select>
-
-    <label>Notes</label>
-    <textarea>Struggled in class recently</textarea>
-
-    <button type="submit">Save Changes</button>
+  <h1>Student Details</h1>
+  <form id="editForm">
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="roblox" placeholder="Roblox User">
+    <input type="text" id="discord" placeholder="Discord User">
+    <input type="text" id="timeout" placeholder="Timeout Pass (Y/N)">
+    <textarea id="notes" placeholder="Notes"></textarea>
+    <button type="submit">Save</button>
   </form>
+  <h3>Add Comment</h3>
+  <textarea id="commentBox"></textarea>
+  <button onclick="addComment()">Add Comment</button>
+  <ul id="commentList"></ul>
+  <a href="index.html" class="button">Return</a>
 
-  <h2>Add Staff Comment</h2>
-  <textarea placeholder="Enter comment..."></textarea><br>
-  <button>Add Comment</button>
+  <script>
+    const index = new URLSearchParams(location.search).get('index');
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    const student = students[index];
+
+    document.getElementById('name').value = student.name;
+    document.getElementById('roblox').value = student.roblox;
+    document.getElementById('discord').value = student.discord;
+    document.getElementById('timeout').value = student.timeout;
+    document.getElementById('notes').value = student.notes;
+
+    document.getElementById('editForm').onsubmit = e => {
+      e.preventDefault();
+      students[index] = {
+        name: document.getElementById('name').value,
+        roblox: document.getElementById('roblox').value,
+        discord: document.getElementById('discord').value,
+        timeout: document.getElementById('timeout').value,
+        notes: document.getElementById('notes').value,
+        comments: student.comments || []
+      };
+      localStorage.setItem('students', JSON.stringify(students));
+      alert("Updated!");
+    };
+
+    function addComment() {
+      const text = document.getElementById('commentBox').value;
+      if (!students[index].comments) students[index].comments = [];
+      students[index].comments.push(text);
+      localStorage.setItem('students', JSON.stringify(students));
+      location.reload();
+    }
+
+    const list = document.getElementById('commentList');
+    (student.comments || []).forEach(c => {
+      const li = document.createElement('li');
+      li.innerText = c;
+      list.appendChild(li);
+    });
+  </script>
 </body>
 </html>
