@@ -13,6 +13,7 @@
       --btn-bg: #0066cc;
       --btn-danger: #cc3300;
       --btn-text: #ffffff;
+      --btn-success: #28a745;
     }
 
     body.dark-mode {
@@ -23,6 +24,7 @@
       --btn-bg: #004c99;
       --btn-danger: #aa0000;
       --btn-text: #ffffff;
+      --btn-success: #1e7e34;
     }
 
     body {
@@ -78,6 +80,10 @@
       background-color: var(--btn-danger);
     }
 
+    button.success-btn {
+      background-color: var(--btn-success);
+    }
+
     #returnBtn {
       display: block;
       margin: 30px auto 0 auto;
@@ -90,7 +96,7 @@
       text-align: center;
     }
 
-    #editModal, #staffModal {
+    #editModal, #staffModal, #passwordResetModal {
       display: none;
       position: fixed;
       top: 10%;
@@ -101,9 +107,11 @@
       padding: 20px;
       z-index: 1000;
       width: 90%;
-      max-width: 500px;
+      max-width: 550px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       color: var(--text-color);
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     #modalOverlay {
@@ -135,6 +143,18 @@
       border: 1px solid var(--table-border);
       box-sizing: border-box;
       border-radius: 4px;
+    }
+
+    label {
+      user-select: none;
+    }
+
+    /* Scroll inside modals if content large */
+    #staffTable tbody tr input[type="text"] {
+      width: 95%;
+      padding: 4px 6px;
+      margin: 0;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -199,13 +219,34 @@
   <input type="password" id="newStaffPassword" placeholder="Password" />
   <label><input type="checkbox" id="newStaffAdmin" /> Admin</label><br />
   <button id="addStaffBtn">Add Staff</button>
+
+  <hr>
+
+  <h3>Password Reset Requests</h3>
+  <table id="passwordNoticesTable" style="width:100%;">
+    <thead>
+      <tr><th>Username</th><th>Requested At</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
   <button onclick="closeStaffModal()">Close</button>
+</div>
+
+<!-- Password Reset Modal -->
+<div id="passwordResetModal">
+  <h3>Reset Password</h3>
+  <p><strong>User:</strong> <span id="resetUsername"></span></p>
+  <input type="password" id="newPasswordInput" placeholder="Enter new password" />
+  <button onclick="confirmPasswordReset()">Confirm Reset</button>
+  <button onclick="closePasswordResetModal()">Cancel</button>
 </div>
 
 <script>
   let students = [];
   let currentEditIndex = null;
   const staffKey = 'staffUsers';
+  const passwordRequestsKey = 'passwordResetRequests';
 
   // Load saved theme and data
   document.addEventListener('DOMContentLoaded', () => {
@@ -304,6 +345,7 @@
 
   document.getElementById('manageStaffBtn').addEventListener('click', () => {
     loadStaffUsers();
+    loadPasswordRequests();
     document.getElementById('staffModal').style.display = 'block';
   });
 
@@ -311,6 +353,7 @@
     document.getElementById('staffModal').style.display = 'none';
   }
 
+  // Staff users loaded and editable inline
   function loadStaffUsers() {
     const staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
     const tbody = document.querySelector('#staffTable tbody');
@@ -318,14 +361,39 @@
     staffUsers.forEach((user, i) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${user.username}</td>
-        <td>${user.isAdmin ? 'Yes' : 'No'}</td>
+        <td><input type="text" value="${user.username}" onchange="updateStaffUsername(${i}, this.value)" /></td>
+        <td><input type="checkbox" ${user.isAdmin ? 'checked' : ''} onchange="updateStaffAdmin(${i}, this.checked)" /></td>
         <td>
           <button onclick="removeStaff(${i})" class="remove-btn">Remove</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  function updateStaffUsername(index, newUsername) {
+    if (!newUsername.trim()) {
+      alert('Username cannot be empty.');
+      loadStaffUsers();
+      return;
+    }
+    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+
+    // Prevent duplicates
+    if (staffUsers.some((u, i) => i !== index && u.username === newUsername)) {
+      alert('Username already exists.');
+      loadStaffUsers();
+      return;
+    }
+
+    staffUsers[index].username = newUsername.trim();
+    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
+  }
+
+  function updateStaffAdmin(index, isAdminChecked) {
+    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+    staffUsers[index].isAdmin = isAdminChecked;
+    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
   }
 
   document.getElementById('addStaffBtn').addEventListener('click', () => {
@@ -344,7 +412,6 @@
       return;
     }
 
-    // Note: Passwords stored in plain text in localStorage, not secure for production!
     staffUsers.push({ username, password, isAdmin });
     localStorage.setItem(staffKey, JSON.stringify(staffUsers));
 
@@ -362,6 +429,84 @@
     staffUsers.splice(index, 1);
     localStorage.setItem(staffKey, JSON.stringify(staffUsers));
     loadStaffUsers();
+  }
+
+  // --- Password Reset Requests ---
+
+  function loadPasswordRequests() {
+    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
+    const tbody = document.querySelector('#passwordNoticesTable tbody');
+    tbody.innerHTML = '';
+    requests.forEach((req, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${req.username}</td>
+        <td>${new Date(req.requestedAt).toLocaleString()}</td>
+        <td>
+          <button class="success-btn" onclick="openPasswordReset(${i})">Reset Password</button>
+          <button class="remove-btn" onclick="removePasswordRequest(${i})">Dismiss</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function removePasswordRequest(index) {
+    let requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
+    requests.splice(index, 1);
+    localStorage.setItem(passwordRequestsKey, JSON.stringify(requests));
+    loadPasswordRequests();
+  }
+
+  // Password reset modal logic
+  let resetRequestIndex = null;
+
+  function openPasswordReset(requestIndex) {
+    resetRequestIndex = requestIndex;
+    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
+    if (!requests[requestIndex]) return alert('Request not found.');
+
+    document.getElementById('resetUsername').textContent = requests[requestIndex].username;
+    document.getElementById('newPasswordInput').value = '';
+    document.getElementById('passwordResetModal').style.display = 'block';
+  }
+
+  function closePasswordResetModal() {
+    document.getElementById('passwordResetModal').style.display = 'none';
+  }
+
+  function confirmPasswordReset() {
+    const newPass = document.getElementById('newPasswordInput').value;
+    if (!newPass) {
+      alert('Please enter a new password.');
+      return;
+    }
+    const requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
+    if (!requests[resetRequestIndex]) {
+      alert('Password reset request not found.');
+      closePasswordResetModal();
+      return;
+    }
+    const usernameToReset = requests[resetRequestIndex].username;
+
+    // Update password in staff users
+    let staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
+    const userIndex = staffUsers.findIndex(u => u.username === usernameToReset);
+    if (userIndex === -1) {
+      alert('User not found.');
+      closePasswordResetModal();
+      return;
+    }
+    staffUsers[userIndex].password = newPass;
+    localStorage.setItem(staffKey, JSON.stringify(staffUsers));
+
+    // Remove the request
+    requests.splice(resetRequestIndex, 1);
+    localStorage.setItem(passwordRequestsKey, JSON.stringify(requests));
+
+    alert(`Password for "${usernameToReset}" has been reset.`);
+    closePasswordResetModal();
+    loadPasswordRequests();
   }
 </script>
 
