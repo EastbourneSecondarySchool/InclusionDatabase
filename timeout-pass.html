@@ -1,35 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Timeout Pass List</title>
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    th { background-color: #003366; color: white; }
+    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
+    li { margin-bottom: 10px; }
   </style>
 </head>
 <body>
-  <h1>Timeout Pass Students</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Student Name</th>
-        <th>Roblox User</th>
-        <th>Discord User</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Example row -->
-      <tr>
-        <td>John Smith</td>
-        <td>robloxJohn</td>
-        <td>@john#1234</td>
-        <td>Needs regular breaks</td>
-      </tr>
-    </tbody>
-  </table>
+  <h1>Students with Timeout Pass</h1>
+  <ul id="passList"></ul>
+  <a href="index.html" class="button">Return</a>
+
+  <script>
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    const passList = document.getElementById('passList');
+
+    students.filter(s => s.timeout.toUpperCase() === 'Y').forEach(s => {
+      const li = document.createElement('li');
+      li.innerText = s.name;
+      passList.appendChild(li);
+    });
+  </script>
 </body>
 </html>
