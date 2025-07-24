@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student List</title>
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #003366; color: white; }
+    a { color: #0066cc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Student List</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Roblox User</th>
+        <th>Discord User</th>
+        <th>Timeout Pass</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody id="studentTable">
+      <!-- Dynamic content -->
+      <tr>
+        <td><a href="student-details.html?id=1">John Smith</a></td>
+        <td>robloxJohn</td>
+        <td>@john#1234</td>
+        <td>Y</td>
+        <td>Struggled in class recently</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
