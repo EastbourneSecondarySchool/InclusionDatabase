@@ -3,23 +3,57 @@
 <head>
   <title>Admin Login</title>
   <style>
-    .button { margin-top: 20px; display: inline-block; background: #0066cc; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
-    input { display: block; margin-bottom: 10px; width: 100%; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 60px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .button {
+      margin-top: 20px;
+      display: inline-block;
+      background: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    input {
+      display: block;
+      margin: 10px auto;
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Admin Login</h1>
   <input type="text" id="username" placeholder="Username">
   <input type="password" id="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+  <button class="button" onclick="login()">Login</button>
   <a href="index.html" class="button">Return</a>
 
   <script>
     function login() {
       const u = document.getElementById('username').value;
       const p = document.getElementById('password').value;
+
       if (u === "Admin" && p === "EastbournePastoralAdmin") {
-        window.location.href = "admin-panel.html";
+        sessionStorage.setItem("loggedInUser", u);
+        sessionStorage.setItem("isAdmin", "true");
+        window.location.href = "admin.html";
       } else {
         alert("Access Denied");
       }
