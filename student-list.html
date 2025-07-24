@@ -41,35 +41,50 @@
   }
 </script>
 
-  <h1>Student List</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Student Name</th>
-        <th>Roblox User</th>
-        <th>Discord User</th>
-        <th>Timeout Pass (Y/N)</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody id="studentTableBody"></tbody>
-  </table>
+<h1>Student List</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Student Name</th>
+      <th>Roblox User</th>
+      <th>Discord User</th>
+      <th>Timeout Pass (Y/N)</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="studentTableBody"></tbody>
+</table>
 
-  <a href="index.html" class="button">Return</a>
+<a href="index.html" class="button">Return</a>
 
-  <script>
-    function loadStudents() {
-      const students = JSON.parse(localStorage.getItem('students')) || [];
+<script>
+  async function loadStudents() {
+    try {
+      const res = await fetch('/api/students');
+      if (!res.ok) throw new Error('Failed to load students: ' + res.statusText);
+      const students = await res.json();
+
       const tbody = document.getElementById('studentTableBody');
       tbody.innerHTML = '';
+
+      if (!Array.isArray(students) || students.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 5;
+        td.textContent = 'No students found.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
       students.forEach((student, index) => {
         const tr = document.createElement('tr');
 
         // Name with clickable link to details
         const nameTd = document.createElement('td');
         const link = document.createElement('a');
-        link.href = `student-details.html?id=${index}`;
-        link.textContent = student.name;
+        link.href = `student-details.html?id=${encodeURIComponent(index)}`;
+        link.textContent = student.name || '(No Name)';
         nameTd.appendChild(link);
         tr.appendChild(nameTd);
 
@@ -82,8 +97,12 @@
 
         tbody.appendChild(tr);
       });
+    } catch (error) {
+      alert(error.message);
     }
-    loadStudents();
-  </script>
+  }
+
+  loadStudents();
+</script>
 </body>
 </html>
