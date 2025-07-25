@@ -46,6 +46,7 @@
         Timeout Pass List
       </button>
       <button
+        id="behaviourBtn"
         onclick="window.location.href='behaviourdatabase.html'"
         class="w-full bg-purple-600 text-white py-3 rounded hover:bg-purple-700 transition font-semibold"
       >
@@ -62,8 +63,17 @@
 
   <script>
     // Redirect to login if no role found
-    if (!localStorage.getItem('role')) {
+    const role = localStorage.getItem('role');
+    if (!role) {
       window.location.href = 'login.html';
+    }
+
+    // Show or hide Behaviour View button based on role
+    const behaviourBtn = document.getElementById('behaviourBtn');
+    if (role === 'admin' || role === 'behaviour') {
+      behaviourBtn.style.display = 'block';
+    } else {
+      behaviourBtn.style.display = 'none';
     }
 
     function logout() {
