@@ -42,8 +42,13 @@
         window.location.href = 'index.html';
       }
       // Admin login
-      else if (username === 'Pastoral.Eastbourne.Admin' && password === '345780URNEADMIN') {
+      else if (username === 'Eastbourne.Admin' && password === '345780URNEADMIN') {
         localStorage.setItem('role', 'admin');
+        window.location.href = 'index.html';
+      }
+      // Behaviour staff login
+      else if (username === 'Behaviour.Eastbourne' && password === 'Behaviour.Eastbourne.1') {
+        localStorage.setItem('role', 'behaviour');
         window.location.href = 'index.html';
       }
       else {
