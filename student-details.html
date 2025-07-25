@@ -86,6 +86,7 @@
 </head>
 <body>
 <script>
+  // Redirect if not logged in (sessionStorage for consistency with add-entry.html)
   if (!sessionStorage.getItem('loggedInUser')) {
     window.location.href = 'login.html';
   }
