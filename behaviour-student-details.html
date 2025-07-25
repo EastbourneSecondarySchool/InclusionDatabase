@@ -15,14 +15,20 @@
     <p id="studentDetails" class="mb-6 text-gray-700"></p>
 
     <div id="behaviourContent">
-      <h2 class="text-xl font-semibold mt-6 mb-2">Behaviour Incidents</h2>
-      <ul id="incidentList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
+      <section>
+        <h2 class="text-xl font-semibold mt-6 mb-2">Behaviour Incidents</h2>
+        <ul id="incidentList" class="space-y-2"></ul>
+      </section>
 
-      <h2 class="text-xl font-semibold mt-6 mb-2">Isolations</h2>
-      <ul id="isolationList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
+      <section>
+        <h2 class="text-xl font-semibold mt-6 mb-2">Isolations</h2>
+        <ul id="isolationList" class="space-y-2"></ul>
+      </section>
 
-      <h2 class="text-xl font-semibold mt-6 mb-2">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
+      <section>
+        <h2 class="text-xl font-semibold mt-6 mb-2">Exclusions</h2>
+        <ul id="exclusionList" class="space-y-2"></ul>
+      </section>
     </div>
   </div>
 
@@ -48,6 +54,25 @@
     const isolationList = document.getElementById('isolationList');
     const exclusionList = document.getElementById('exclusionList');
 
+    function createEntryItem(entry, arrayName, index) {
+      const li = document.createElement('li');
+      li.className = "flex justify-between items-start bg-gray-50 p-3 rounded";
+
+      const date = entry.timestamp?.toDate().toLocaleString() || 'Unknown';
+      const text = entry.text || entry.reason || '';
+      li.innerHTML = `
+        <div>
+          <p class="font-medium">${text}</p>
+          <p class="text-sm text-gray-500">${date}</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="text-blue-600 hover:underline text-sm" onclick="editEntry('${arrayName}', ${index})">✏️ Edit</button>
+          <button class="text-red-600 hover:underline text-sm" onclick="deleteEntry('${arrayName}', ${index})">🗑 Delete</button>
+        </div>
+      `;
+      return li;
+    }
+
     async function loadStudentDetails() {
       try {
         const doc = await db.collection('students').doc(studentId).get();
@@ -60,36 +85,50 @@
         studentName.textContent = data.name;
         studentDetails.textContent = `Year: ${data.year || 'N/A'} | Timeout Pass: ${data.timeoutPass || 'N/A'}`;
 
-        const formatEntry = (entry) => {
-          const date = entry.timestamp?.toDate().toLocaleString() || 'Unknown date';
-          return `${entry.text || entry.reason} (${date})`;
-        };
+        window.currentStudentData = data; // Store for edit/delete access
 
-        // Behaviour incidents
-        (data.behaviourIncidents || []).forEach(incident => {
-          const li = document.createElement('li');
-          li.textContent = formatEntry(incident);
-          incidentList.appendChild(li);
+        (data.behaviourIncidents || []).forEach((entry, i) => {
+          incidentList.appendChild(createEntryItem(entry, 'behaviourIncidents', i));
         });
 
-        // Isolations
-        (data.isolations || []).forEach(isolation => {
-          const li = document.createElement('li');
-          li.textContent = formatEntry(isolation);
-          isolationList.appendChild(li);
+        (data.isolations || []).forEach((entry, i) => {
+          isolationList.appendChild(createEntryItem(entry, 'isolations', i));
         });
 
-        // Exclusions
-        (data.exclusions || []).forEach(exclusion => {
-          const li = document.createElement('li');
-          li.textContent = formatEntry(exclusion);
-          exclusionList.appendChild(li);
+        (data.exclusions || []).forEach((entry, i) => {
+          exclusionList.appendChild(createEntryItem(entry, 'exclusions', i));
         });
-
       } catch (err) {
         console.error("Error loading student data:", err);
         studentName.textContent = "Failed to load student data.";
       }
+    }
+
+    async function editEntry(arrayName, index) {
+      const studentRef = db.collection('students').doc(studentId);
+      const data = window.currentStudentData;
+      const currentEntry = data[arrayName][index];
+      const currentText = currentEntry.text || currentEntry.reason;
+      const newText = prompt("Edit entry:", currentText);
+      if (newText && newText.trim() !== "") {
+        const updatedArray = [...data[arrayName]];
+        updatedArray[index] = {
+          ...(currentEntry.text ? { text: newText } : { reason: newText }),
+          timestamp: currentEntry.timestamp
+        };
+        await studentRef.update({ [arrayName]: updatedArray });
+        location.reload();
+      }
+    }
+
+    async function deleteEntry(arrayName, index) {
+      if (!confirm("Are you sure you want to delete this entry?")) return;
+      const studentRef = db.collection('students').doc(studentId);
+      const data = window.currentStudentData;
+      const updatedArray = [...data[arrayName]];
+      updatedArray.splice(index, 1);
+      await studentRef.update({ [arrayName]: updatedArray });
+      location.reload();
     }
 
     loadStudentDetails();
