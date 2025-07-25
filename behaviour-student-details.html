@@ -8,7 +8,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script>
-    // Your Firebase config here
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
@@ -19,7 +18,6 @@
       measurementId: "G-54LQVPWPJH"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
   </script>
@@ -49,10 +47,14 @@
         <li>Loading...</li>
       </ul>
     </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-2 text-red-600">Debug Info</h2>
+      <pre id="debugInfo" class="bg-gray-200 p-4 rounded overflow-x-auto max-h-64"></pre>
+    </section>
   </div>
 
   <script>
-    // Get student ID from URL query string
     const params = new URLSearchParams(window.location.search);
     const studentId = params.get('id');
 
@@ -60,6 +62,8 @@
       alert('No student ID provided.');
       window.location.href = 'behaviourdatabase.html';
     }
+
+    const debugInfoEl = document.getElementById('debugInfo');
 
     async function loadStudentDetails() {
       try {
@@ -71,23 +75,21 @@
           ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
             document.getElementById(id).innerHTML = '<li class="text-red-600">No data available.</li>';
           });
+          debugInfoEl.textContent = 'Document does not exist.';
           return;
         }
 
         const data = doc.data();
-        console.log('Fetched student data:', data);
+        debugInfoEl.textContent = JSON.stringify(data, null, 2);
 
-        // Show student name
         document.getElementById('studentName').textContent = data.name || 'Unnamed Student';
 
-        // Helper function to format timestamp nicely
         function formatDate(timestamp) {
           if (!timestamp) return '';
-          const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-          return date.toLocaleString();
+          if (timestamp.toDate) return timestamp.toDate().toLocaleString();
+          return new Date(timestamp).toLocaleString();
         }
 
-        // Render lists
         function renderList(containerId, items, textKey = 'text', reasonKey = 'reason') {
           const container = document.getElementById(containerId);
           container.innerHTML = '';
@@ -98,15 +100,8 @@
           }
 
           items.forEach(item => {
-            let description = '';
-            if (item[textKey]) {
-              description = item[textKey];
-            } else if (item[reasonKey]) {
-              description = item[reasonKey];
-            } else {
-              description = 'No description';
-            }
-            const timeStr = item.timestamp ? ` (on ${formatDate(item.timestamp)})` : '';
+            let description = item[textKey] || item[reasonKey] || 'No description';
+            let timeStr = item.timestamp ? ` (on ${formatDate(item.timestamp)})` : '';
             const li = document.createElement('li');
             li.textContent = description + timeStr;
             container.appendChild(li);
@@ -123,6 +118,7 @@
         ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
           document.getElementById(id).innerHTML = '<li class="text-red-600">Failed to load data.</li>';
         });
+        debugInfoEl.textContent = error.message || 'Unknown error';
       }
     }
 
