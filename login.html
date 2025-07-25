@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login</title>
+  <title>Main Website Login</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 40px; background: #f7f7f7; }
     .login-container {
@@ -27,7 +27,7 @@
 </head>
 <body>
   <div class="login-container">
-    <h2>Login</h2>
+    <h2>Main Website Login</h2>
     <form id="loginForm">
       <label for="username">Username:</label>
       <input type="text" id="username" autocomplete="username" required />
@@ -98,10 +98,9 @@
         });
 
         if (matched) {
-          // Successful login - redirect or show success
           alert(`Welcome, ${username}!`);
-          // Replace below with your app's post-login page or logic:
-          window.location.href = "admin.html";
+          // Redirect to main website home page (adjust URL as needed)
+          window.location.href = "index.html";
         } else {
           errorMsg.textContent = 'Invalid username or password.';
         }
@@ -118,7 +117,6 @@
         return;
       }
       try {
-        // Add a new password reset notice in Firestore
         const noticesCol = collection(db, 'passwordNotices');
         await addDoc(noticesCol, {
           username,
