@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Panel</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -32,7 +32,7 @@
   <div id="studentsTab" class="tab-content">
     <h2>Students</h2>
     <table id="studentsTable">
-      <thead><tr><th>#</th><th>Name</th><th>Discord</th><th>Roblox</th></tr></thead>
+      <thead><tr><th>#</th><th>Name</th><th>Email</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -51,14 +51,13 @@
     <ul id="noticesList"></ul>
   </div>
 
-  <!-- Add/Edit Staff Modal (starts hidden) -->
   <div id="editStaffModal" class="modal hidden">
     <div class="modal-content">
       <h3 id="staffModalTitle">Add Staff Member</h3>
       <label for="staffUsername">Username:</label>
-      <input type="text" id="staffUsername" />
+      <input type="text" id="staffUsername" autocomplete="off" />
       <label for="staffPassword">Password:</label>
-      <input type="password" id="staffPassword" />
+      <input type="password" id="staffPassword" autocomplete="off" />
       <label for="staffRole">Role:</label>
       <select id="staffRole">
         <option value="staff">Staff</option>
@@ -71,17 +70,20 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
-      getDatabase,
-      ref,
-      onValue,
-      push,
-      set,
-      remove
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+      getFirestore,
+      collection,
+      getDocs,
+      onSnapshot,
+      addDoc,
+      doc,
+      updateDoc,
+      deleteDoc,
+      query,
+      where
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -94,15 +96,15 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db = getFirestore(app);
 
+    // Tab logic
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = {
       studentsTab: document.getElementById('studentsTab'),
       staffTab: document.getElementById('staffTab'),
       noticesTab: document.getElementById('noticesTab')
     };
-
     tabs.forEach(btn => {
       btn.addEventListener('click', () => {
         tabs.forEach(b => b.classList.remove('active'));
@@ -112,6 +114,7 @@
       });
     });
 
+    // Elements
     const studentsTableBody = document.querySelector('#studentsTable tbody');
     const staffTableBody = document.querySelector('#staffTable tbody');
     const noticesList = document.getElementById('noticesList');
@@ -125,73 +128,76 @@
     const openModal = () => editStaffModal.classList.remove('hidden');
     const closeModal = () => editStaffModal.classList.add('hidden');
 
+    // Load Students
     function loadStudents() {
-      const studentsRef = ref(db, 'students');
-      onValue(studentsRef, snapshot => {
+      const studentsCol = collection(db, 'students');
+      onSnapshot(studentsCol, snapshot => {
         studentsTableBody.innerHTML = '';
-        const data = snapshot.val();
-        if (data) {
-          Object.entries(data).forEach(([_, student], index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${student.name || ''}</td>
-              <td>${student.discord || ''}</td>
-              <td>${student.roblox || ''}</td>
-            `;
-            studentsTableBody.appendChild(tr);
-          });
-        }
+        let idx = 1;
+        snapshot.forEach(docSnap => {
+          const student = docSnap.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${idx++}</td><td>${student.name || ''}</td><td>${student.email || ''}</td>`;
+          studentsTableBody.appendChild(tr);
+        });
       });
     }
 
+    // Load Staff
     function loadStaff() {
-      const staffRef = ref(db, 'staff');
-      onValue(staffRef, snapshot => {
+      const staffCol = collection(db, 'staff');
+      onSnapshot(staffCol, snapshot => {
         staffTableBody.innerHTML = '';
-        const data = snapshot.val();
-        if (data) {
-          Object.entries(data).forEach(([_, staff], index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${staff.username || ''}</td><td>${staff.role || ''}</td>`;
-            staffTableBody.appendChild(tr);
-          });
-        }
+        let idx = 1;
+        snapshot.forEach(docSnap => {
+          const staff = docSnap.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${idx++}</td><td>${staff.username || ''}</td><td>${staff.role || ''}</td>`;
+          staffTableBody.appendChild(tr);
+        });
       });
     }
 
+    // Load Password Notices
     function loadNotices() {
-      const noticesRef = ref(db, 'passwordNotices');
-      onValue(noticesRef, snapshot => {
+      const noticesCol = collection(db, 'passwordNotices');
+      onSnapshot(noticesCol, snapshot => {
         noticesList.innerHTML = '';
-        const data = snapshot.val();
-        if (data) {
-          Object.entries(data).forEach(([key, notice]) => {
-            const li = document.createElement('li');
-            li.innerHTML = `${notice.username} requested a reset. <button data-id="${key}" data-username="${notice.username}">Reset</button>`;
-            li.querySelector('button').addEventListener('click', () => {
-              const newPassword = prompt(`Enter new password for ${notice.username}`);
-              if (newPassword) {
-                const staffRef = ref(db, 'staff');
-                onValue(staffRef, staffSnap => {
-                  const all = staffSnap.val();
-                  if (all) {
-                    Object.entries(all).forEach(([id, staff]) => {
-                      if (staff.username === notice.username) {
-                        set(ref(db, `staff/${id}`), { ...staff, password: newPassword });
-                        remove(ref(db, `passwordNotices/${key}`));
-                      }
-                    });
-                  }
-                }, { onlyOnce: true });
+        snapshot.forEach(docSnap => {
+          const notice = docSnap.data();
+          const li = document.createElement('li');
+          li.innerHTML = `${notice.username} requested reset. <button>Reset</button>`;
+          const resetBtn = li.querySelector('button');
+          resetBtn.addEventListener('click', async () => {
+            const newPassword = prompt(`Enter new password for ${notice.username}:`);
+            if (newPassword) {
+              try {
+                // Find staff doc by username
+                const staffCol = collection(db, 'staff');
+                const q = query(staffCol, where('username', '==', notice.username));
+                const staffSnap = await getDocs(q);
+                if (staffSnap.empty) {
+                  alert('Staff user not found');
+                  return;
+                }
+                // Update password for all matching staff (usually one)
+                for (const staffDoc of staffSnap.docs) {
+                  await updateDoc(staffDoc.ref, { password: newPassword });
+                }
+                // Remove the notice
+                await deleteDoc(doc(db, 'passwordNotices', docSnap.id));
+                alert('Password reset successfully');
+              } catch (error) {
+                alert('Error resetting password: ' + error.message);
               }
-            });
-            noticesList.appendChild(li);
+            }
           });
-        }
+          noticesList.appendChild(li);
+        });
       });
     }
 
+    // Add Staff button opens modal
     document.getElementById('addStaffBtn').addEventListener('click', () => {
       staffModalTitle.textContent = 'Add Staff Member';
       staffUsernameInput.value = '';
@@ -200,26 +206,40 @@
       openModal();
     });
 
+    // Cancel modal
     document.getElementById('cancelStaffBtn').addEventListener('click', () => {
       closeModal();
     });
 
+    // Save staff member
     document.getElementById('saveStaffBtn').addEventListener('click', async () => {
       const username = staffUsernameInput.value.trim();
       const password = staffPasswordInput.value.trim();
       const role = staffRoleSelect.value;
 
       if (!username || !password) {
-        alert('All fields required.');
+        alert('All fields are required');
         return;
       }
 
-      const staffRef = ref(db, 'staff');
-      const newRef = push(staffRef);
-      await set(newRef, { username, password, role });
-      closeModal();
+      try {
+        // Check if username exists
+        const staffCol = collection(db, 'staff');
+        const q = query(staffCol, where('username', '==', username));
+        const existing = await getDocs(q);
+        if (!existing.empty) {
+          alert('Username already exists.');
+          return;
+        }
+        // Add new staff doc
+        await addDoc(staffCol, { username, password, role });
+        closeModal();
+      } catch (error) {
+        alert('Error adding staff: ' + error.message);
+      }
     });
 
+    // Initialize all data
     loadStudents();
     loadStaff();
     loadNotices();
