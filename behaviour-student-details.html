@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Behaviour Student Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <!-- Use Firebase v8 scripts for compatibility -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -21,110 +19,114 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return 'Unknown date';
+      if (ts.seconds !== undefined) {
+        return new Date(ts.seconds * 1000).toLocaleString();
+      }
+      let date = new Date(ts);
+      return isNaN(date.getTime()) ? 'Unknown date' : date.toLocaleString();
+    }
+
+    async function loadStudent() {
+      const studentId = getQueryParam('id');
+      if (!studentId) {
+        alert('No student ID provided');
+        return;
+      }
+
+      try {
+        const doc = await db.collection('students').doc(studentId).get();
+        if (!doc.exists) {
+          alert('Student not found');
+          return;
+        }
+        const data = doc.data();
+
+        document.getElementById('studentName').textContent = data.name || 'No name';
+        document.getElementById('studentYear').textContent = data.year || 'N/A';
+
+        const behaviourList = document.getElementById('behaviourIncidents');
+        const isolationList = document.getElementById('isolations');
+        const exclusionList = document.getElementById('exclusions');
+
+        behaviourList.innerHTML = '';
+        isolationList.innerHTML = '';
+        exclusionList.innerHTML = '';
+
+        if (Array.isArray(data.behaviourIncidents) && data.behaviourIncidents.length) {
+          data.behaviourIncidents.forEach(incident => {
+            const li = document.createElement('li');
+            li.textContent = `${incident.text} (on ${formatTimestamp(incident.timestamp)})`;
+            behaviourList.appendChild(li);
+          });
+        } else {
+          behaviourList.innerHTML = '<li>No behaviour incidents recorded.</li>';
+        }
+
+        if (Array.isArray(data.isolations) && data.isolations.length) {
+          data.isolations.forEach(isolation => {
+            const li = document.createElement('li');
+            li.textContent = `${isolation.reason} (on ${formatTimestamp(isolation.timestamp)})`;
+            isolationList.appendChild(li);
+          });
+        } else {
+          isolationList.innerHTML = '<li>No isolations recorded.</li>';
+        }
+
+        if (Array.isArray(data.exclusions) && data.exclusions.length) {
+          data.exclusions.forEach(exclusion => {
+            const li = document.createElement('li');
+            li.textContent = `${exclusion.reason} (on ${formatTimestamp(exclusion.timestamp)})`;
+            exclusionList.appendChild(li);
+          });
+        } else {
+          exclusionList.innerHTML = '<li>No exclusions recorded.</li>';
+        }
+
+      } catch (error) {
+        console.error('Error loading student data:', error);
+        alert('Failed to load student data.');
+      }
+    }
+
+    window.onload = () => {
+      loadStudent();
+    };
   </script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Return to Behaviour Database</button>
-    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading student...</h1>
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Back to Behaviour Database</button>
+    <h1 class="text-4xl font-bold mb-2" id="studentName">Loading...</h1>
+    <p class="text-gray-600 mb-6">Year: <span id="studentYear">Loading...</span></p>
 
-    <section>
+    <div class="mb-8">
       <h2 class="text-2xl font-semibold mb-3">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="list-disc list-inside mb-8 text-gray-700">
+      <ul id="behaviourIncidents" class="list-disc list-inside text-gray-800">
         <li>Loading behaviour incidents...</li>
       </ul>
-    </section>
+    </div>
 
-    <section>
+    <div class="mb-8">
       <h2 class="text-2xl font-semibold mb-3">Isolations</h2>
-      <ul id="isolationList" class="list-disc list-inside mb-8 text-gray-700">
+      <ul id="isolations" class="list-disc list-inside text-gray-800">
         <li>Loading isolations...</li>
       </ul>
-    </section>
+    </div>
 
-    <section>
+    <div>
       <h2 class="text-2xl font-semibold mb-3">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc list-inside mb-8 text-gray-700">
+      <ul id="exclusions" class="list-disc list-inside text-gray-800">
         <li>Loading exclusions...</li>
       </ul>
-    </section>
+    </div>
   </div>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const studentId = params.get('id');
-
-    const studentNameEl = document.getElementById('studentName');
-    const behaviourList = document.getElementById('behaviourList');
-    const isolationList = document.getElementById('isolationList');
-    const exclusionList = document.getElementById('exclusionList');
-
-    if (!studentId) {
-      alert('No student ID provided.');
-      studentNameEl.textContent = 'Error: No student ID';
-      behaviourList.innerHTML = '';
-      isolationList.innerHTML = '';
-      exclusionList.innerHTML = '';
-    } else {
-      db.collection('students').doc(studentId).get()
-        .then(doc => {
-          if (!doc.exists) {
-            studentNameEl.textContent = 'Student not found';
-            behaviourList.innerHTML = '';
-            isolationList.innerHTML = '';
-            exclusionList.innerHTML = '';
-            return;
-          }
-          const data = doc.data();
-          studentNameEl.textContent = data.name || 'Unnamed Student';
-
-          // Render behaviour incidents
-          if (data.behaviourIncidents && data.behaviourIncidents.length > 0) {
-            behaviourList.innerHTML = '';
-            data.behaviourIncidents.forEach(incident => {
-              const timeStr = incident.timestamp ? new Date(incident.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
-              const li = document.createElement('li');
-              li.textContent = `${incident.text} (on ${timeStr})`;
-              behaviourList.appendChild(li);
-            });
-          } else {
-            behaviourList.innerHTML = '<li>No behaviour incidents recorded.</li>';
-          }
-
-          // Render isolations
-          if (data.isolations && data.isolations.length > 0) {
-            isolationList.innerHTML = '';
-            data.isolations.forEach(isolation => {
-              const timeStr = isolation.timestamp ? new Date(isolation.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
-              const li = document.createElement('li');
-              li.textContent = `${isolation.reason} (on ${timeStr})`;
-              isolationList.appendChild(li);
-            });
-          } else {
-            isolationList.innerHTML = '<li>No isolations recorded.</li>';
-          }
-
-          // Render exclusions
-          if (data.exclusions && data.exclusions.length > 0) {
-            exclusionList.innerHTML = '';
-            data.exclusions.forEach(exclusion => {
-              const timeStr = exclusion.timestamp ? new Date(exclusion.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
-              const li = document.createElement('li');
-              li.textContent = `${exclusion.reason} (on ${timeStr})`;
-              exclusionList.appendChild(li);
-            });
-          } else {
-            exclusionList.innerHTML = '<li>No exclusions recorded.</li>';
-          }
-        })
-        .catch(error => {
-          console.error('Error loading student data:', error);
-          studentNameEl.textContent = 'Error loading student data.';
-          behaviourList.innerHTML = '';
-          isolationList.innerHTML = '';
-          exclusionList.innerHTML = '';
-        });
-    }
-  </script>
 </body>
 </html>
