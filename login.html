@@ -82,7 +82,7 @@
       }
 
       try {
-        const staffCol = collection(db, 'staffUsers'); // FIXED collection name
+        const staffCol = collection(db, 'staffUsers');
         const q = query(staffCol, where('username', '==', username));
         const staffSnap = await getDocs(q);
 
@@ -94,18 +94,14 @@
         let matched = false;
         staffSnap.forEach(doc => {
           const data = doc.data();
-          // case-insensitive username check
-          if (
-            data.username.toLowerCase() === username.toLowerCase() &&
-            data.password === password
-          ) {
-            matched = true;
-          }
+          if (data.password === password) matched = true;
         });
 
         if (matched) {
+          // Save username to localStorage for session persistence
+          localStorage.setItem('loggedInUser', username);
           alert(`Welcome, ${username}!`);
-          // Redirect to main website home page
+          // Redirect to main website home page (adjust URL as needed)
           window.location.href = "index.html";
         } else {
           errorMsg.textContent = 'Invalid username or password.';
