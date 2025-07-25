@@ -3,35 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Behaviour Details</title>
+  <title>Behaviour Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Back to Behaviour Database</button>
-    <h1 class="text-3xl font-bold mb-4" id="studentName">Loading...</h1>
-    <p id="studentDetails" class="mb-6 text-gray-700"></p>
-
-    <div id="behaviourContent">
-      <section>
-        <h2 class="text-xl font-semibold mt-6 mb-2">Behaviour Incidents</h2>
-        <ul id="incidentList" class="space-y-2"></ul>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold mt-6 mb-2">Isolations</h2>
-        <ul id="isolationList" class="space-y-2"></ul>
-      </section>
-
-      <section>
-        <h2 class="text-xl font-semibold mt-6 mb-2">Exclusions</h2>
-        <ul id="exclusionList" class="space-y-2"></ul>
-      </section>
-    </div>
-  </div>
-
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -44,94 +19,92 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white rounded shadow p-6">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-4 text-blue-600 hover:underline">← Back to Behaviour Database</button>
+    <h1 class="text-2xl font-bold mb-4" id="studentName">Loading...</h1>
 
+    <div id="entriesContainer" class="space-y-6">
+      <div>
+        <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
+        <ul id="incidentsList" class="space-y-2"></ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-semibold mb-2">Isolations</h2>
+        <ul id="isolationsList" class="space-y-2"></ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
+        <ul id="exclusionsList" class="space-y-2"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
     const urlParams = new URLSearchParams(window.location.search);
     const studentId = urlParams.get('id');
 
-    const studentName = document.getElementById('studentName');
-    const studentDetails = document.getElementById('studentDetails');
-    const incidentList = document.getElementById('incidentList');
-    const isolationList = document.getElementById('isolationList');
-    const exclusionList = document.getElementById('exclusionList');
-
-    function createEntryItem(entry, arrayName, index) {
-      const li = document.createElement('li');
-      li.className = "flex justify-between items-start bg-gray-50 p-3 rounded";
-
-      const date = entry.timestamp?.toDate().toLocaleString() || 'Unknown';
-      const text = entry.text || entry.reason || '';
-      li.innerHTML = `
-        <div>
-          <p class="font-medium">${text}</p>
-          <p class="text-sm text-gray-500">${date}</p>
-        </div>
-        <div class="flex gap-2">
-          <button class="text-blue-600 hover:underline text-sm" onclick="editEntry('${arrayName}', ${index})">✏️ Edit</button>
-          <button class="text-red-600 hover:underline text-sm" onclick="deleteEntry('${arrayName}', ${index})">🗑 Delete</button>
-        </div>
-      `;
-      return li;
+    if (!studentId) {
+      alert('No student ID provided.');
+      window.location.href = 'behaviourdatabase.html';
     }
 
-    async function loadStudentDetails() {
+    const studentNameEl = document.getElementById('studentName');
+    const incidentsList = document.getElementById('incidentsList');
+    const isolationsList = document.getElementById('isolationsList');
+    const exclusionsList = document.getElementById('exclusionsList');
+
+    function renderList(listElement, dataArray, arrayName) {
+      listElement.innerHTML = '';
+
+      if (!dataArray || dataArray.length === 0) {
+        listElement.innerHTML = '<li class="text-gray-500">No entries</li>';
+        return;
+      }
+
+      dataArray.forEach((entry, index) => {
+        const li = document.createElement('li');
+        li.className = "flex justify-between items-start bg-gray-50 p-3 rounded";
+
+        const isObject = typeof entry === 'object' && entry !== null;
+        const text = entry?.text || entry?.reason || (typeof entry === 'string' ? entry : 'Unknown');
+        const date = isObject && entry.timestamp?.toDate ? entry.timestamp.toDate().toLocaleString() : '';
+
+        li.innerHTML = `
+          <div>
+            <p class="font-medium">${text}</p>
+            <p class="text-sm text-gray-500">${date || 'No date recorded'}</p>
+          </div>
+        `;
+        listElement.appendChild(li);
+      });
+    }
+
+    async function loadStudent() {
       try {
         const doc = await db.collection('students').doc(studentId).get();
         if (!doc.exists) {
-          studentName.textContent = "Student not found";
-          return;
+          alert('Student not found.');
+          window.location.href = 'behaviourdatabase.html';
         }
 
         const data = doc.data();
-        studentName.textContent = data.name;
-        studentDetails.textContent = `Year: ${data.year || 'N/A'} | Timeout Pass: ${data.timeoutPass || 'N/A'}`;
+        studentNameEl.textContent = data.name || 'Unnamed Student';
 
-        window.currentStudentData = data; // Store for edit/delete access
-
-        (data.behaviourIncidents || []).forEach((entry, i) => {
-          incidentList.appendChild(createEntryItem(entry, 'behaviourIncidents', i));
-        });
-
-        (data.isolations || []).forEach((entry, i) => {
-          isolationList.appendChild(createEntryItem(entry, 'isolations', i));
-        });
-
-        (data.exclusions || []).forEach((entry, i) => {
-          exclusionList.appendChild(createEntryItem(entry, 'exclusions', i));
-        });
-      } catch (err) {
-        console.error("Error loading student data:", err);
-        studentName.textContent = "Failed to load student data.";
+        renderList(incidentsList, data.behaviourIncidents, 'behaviourIncidents');
+        renderList(isolationsList, data.isolations, 'isolations');
+        renderList(exclusionsList, data.exclusions, 'exclusions');
+      } catch (error) {
+        console.error('Error loading student data:', error);
+        alert('Failed to load student data.');
       }
     }
 
-    async function editEntry(arrayName, index) {
-      const studentRef = db.collection('students').doc(studentId);
-      const data = window.currentStudentData;
-      const currentEntry = data[arrayName][index];
-      const currentText = currentEntry.text || currentEntry.reason;
-      const newText = prompt("Edit entry:", currentText);
-      if (newText && newText.trim() !== "") {
-        const updatedArray = [...data[arrayName]];
-        updatedArray[index] = {
-          ...(currentEntry.text ? { text: newText } : { reason: newText }),
-          timestamp: currentEntry.timestamp
-        };
-        await studentRef.update({ [arrayName]: updatedArray });
-        location.reload();
-      }
-    }
-
-    async function deleteEntry(arrayName, index) {
-      if (!confirm("Are you sure you want to delete this entry?")) return;
-      const studentRef = db.collection('students').doc(studentId);
-      const data = window.currentStudentData;
-      const updatedArray = [...data[arrayName]];
-      updatedArray.splice(index, 1);
-      await studentRef.update({ [arrayName]: updatedArray });
-      location.reload();
-    }
-
-    loadStudentDetails();
+    loadStudent();
   </script>
 </body>
 </html>
