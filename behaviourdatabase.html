@@ -1,3 +1,4 @@
+<!-- Updated behaviourdatabase.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,9 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+    import {
+      getFirestore, collection, getDocs, addDoc, doc
+    } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -15,8 +18,7 @@
       projectId: "pastoraldatabase",
       storageBucket: "pastoraldatabase.firebasestorage.app",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -31,14 +33,14 @@
         if (snapshot.empty) {
           tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No students found.</td></tr>';
         }
-        snapshot.forEach(doc => {
-          const student = doc.data();
+        snapshot.forEach(docSnap => {
+          const student = docSnap.data();
           const tr = document.createElement('tr');
           tr.className = "hover:bg-gray-100";
 
           const nameTd = document.createElement('td');
           const nameLink = document.createElement('a');
-          nameLink.href = `behaviour-student-details.html?id=${doc.id}`;
+          nameLink.href = `behaviour-student-details.html?id=${docSnap.id}`;
           nameLink.className = "text-blue-600 hover:underline";
           nameLink.textContent = student.name;
           nameTd.className = "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900";
@@ -54,9 +56,9 @@
 
           const actionsTd = document.createElement('td');
           actionsTd.innerHTML = `
-            <button onclick="addIncident('${doc.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded mr-2 hover:bg-indigo-700 text-sm">Add Behaviour</button>
-            <button onclick="addIsolation('${doc.id}')" class="bg-yellow-600 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-700 text-sm">Add Isolation</button>
-            <button onclick="addExclusion('${doc.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Add Exclusion</button>
+            <button onclick="addIncident('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded mr-2 hover:bg-indigo-700 text-sm">Add Behaviour</button>
+            <button onclick="addIsolation('${docSnap.id}')" class="bg-yellow-600 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-700 text-sm">Add Isolation</button>
+            <button onclick="addExclusion('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Add Exclusion</button>
           `;
           actionsTd.className = "px-6 py-4 whitespace-nowrap text-sm";
 
@@ -73,20 +75,49 @@
       }
     }
 
-    window.addIncident = (id) => {
+    window.addIncident = async (id) => {
       const note = prompt("Enter behaviour incident");
       if (!note) return;
-      alert("(This would update the record in Firestore for " + id + ")");
+      try {
+        await addDoc(collection(db, `students/${id}/behaviourIncidents`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Incident added successfully.");
+      } catch (e) {
+        console.error("Error adding incident:", e);
+        alert("Failed to add incident.");
+      }
     };
-    window.addIsolation = (id) => {
+
+    window.addIsolation = async (id) => {
       const note = prompt("Enter isolation reason");
       if (!note) return;
-      alert("(This would update the record in Firestore for " + id + ")");
+      try {
+        await addDoc(collection(db, `students/${id}/isolations`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Isolation added successfully.");
+      } catch (e) {
+        console.error("Error adding isolation:", e);
+        alert("Failed to add isolation.");
+      }
     };
-    window.addExclusion = (id) => {
+
+    window.addExclusion = async (id) => {
       const note = prompt("Enter exclusion reason");
       if (!note) return;
-      alert("(This would update the record in Firestore for " + id + ")");
+      try {
+        await addDoc(collection(db, `students/${id}/exclusions`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Exclusion added successfully.");
+      } catch (e) {
+        console.error("Error adding exclusion:", e);
+        alert("Failed to add exclusion.");
+      }
     };
 
     fetchStudents();
