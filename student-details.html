@@ -85,12 +85,6 @@
   </style>
 </head>
 <body>
-<script>
-  // Redirect if not logged in (sessionStorage for consistency with add-entry.html)
-  if (!sessionStorage.getItem('loggedInUser')) {
-    window.location.href = 'login.html';
-  }
-</script>
 
 <!-- Theme toggle button -->
 <button id="themeToggle" aria-label="Toggle dark/light theme">Toggle Theme</button>
@@ -134,7 +128,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // Firebase configuration - REPLACE with your own config
+  // Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
