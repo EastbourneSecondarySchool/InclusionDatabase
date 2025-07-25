@@ -30,60 +30,63 @@
       text-align: right;
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
 <h2>Website Login</h2>
-<input type="text" id="usernameInput" placeholder="Username" />
+<input type="email" id="emailInput" placeholder="Email" />
 <input type="password" id="passwordInput" placeholder="Password" />
 <button id="loginBtn">Login</button>
 <span id="forgotPasswordLink">Forgot password?</span>
 
 <script>
-  const staffKey = 'staffUsers';
-  const passwordRequestsKey = 'passwordResetRequests';
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+    authDomain: "pastoraldatabase.firebaseapp.com",
+    projectId: "pastoraldatabase",
+    storageBucket: "pastoraldatabase.appspot.com",
+    messagingSenderId: "859785843482",
+    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+    measurementId: "G-54LQVPWPJH"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
   document.getElementById('loginBtn').addEventListener('click', () => {
-    const username = document.getElementById('usernameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
-    if (!username || !password) {
-      alert('Please enter username and password.');
+
+    if (!email || !password) {
+      alert('Please enter email and password.');
       return;
     }
-    const staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    const user = staffUsers.find(u => u.username === username && u.password === password);
-    if (!user) {
-      alert('Invalid username or password.');
-      return;
-    }
-    sessionStorage.setItem('loggedInUser', user.username);
-    sessionStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
-    window.location.href = 'index.html';  // Always redirect to main homepage after login
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(userCredential => {
+        sessionStorage.setItem('loggedInUser', userCredential.user.email);
+        window.location.href = 'index.html';
+      })
+      .catch(error => {
+        alert('Login failed: ' + error.message);
+      });
   });
 
-  // Forgot Password feature
   document.getElementById('forgotPasswordLink').addEventListener('click', () => {
-    const username = prompt('Enter your username for password reset:');
-    if (!username) return;
+    const email = prompt('Enter your email for password reset:');
+    if (!email) return;
 
-    const staffUsers = JSON.parse(localStorage.getItem(staffKey)) || [];
-    const userExists = staffUsers.some(u => u.username === username.trim());
-
-    if (!userExists) {
-      alert('Username not found.');
-      return;
-    }
-
-    let requests = JSON.parse(localStorage.getItem(passwordRequestsKey)) || [];
-    if (requests.some(r => r.username === username.trim())) {
-      alert('You have already requested a password reset. Please wait for admin.');
-      return;
-    }
-
-    requests.push({ username: username.trim(), requestedAt: new Date().toISOString() });
-    localStorage.setItem(passwordRequestsKey, JSON.stringify(requests));
-
-    alert('Password reset request sent to admin.');
+    auth.sendPasswordResetEmail(email.trim())
+      .then(() => {
+        alert('Password reset email sent.');
+      })
+      .catch(error => {
+        alert('Error: ' + error.message);
+      });
   });
 </script>
 
