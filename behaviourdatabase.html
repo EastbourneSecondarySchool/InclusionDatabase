@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Behaviour Database</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+      authDomain: "pastoraldatabase.firebaseapp.com",
+      projectId: "pastoraldatabase",
+      storageBucket: "pastoraldatabase.firebasestorage.app",
+      messagingSenderId: "859785843482",
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="flex items-center space-x-4 mb-6">
+    <img src="logo.png" alt="Logo" class="h-10" />
+    <h1 class="text-2xl font-bold text-gray-800">Behaviour Database</h1>
+  </div>
+
+  <input type="text" id="search" placeholder="Search students..." class="mb-4 p-2 border border-gray-300 rounded w-full max-w-md" />
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="py-2 px-4 text-left">Name</th>
+          <th class="py-2 px-4 text-left">Year</th>
+          <th class="py-2 px-4 text-left">Timeout Pass</th>
+        </tr>
+      </thead>
+      <tbody id="student-table">
+        <tr><td colspan="3" class="text-center py-4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button onclick="window.location.href='index.html'" class="mt-6 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Return to Dashboard</button>
+
+  <script>
+    const tableBody = document.getElementById('student-table');
+    const searchInput = document.getElementById('search');
+
+    function renderStudentRow(doc) {
+      const data = doc.data();
+      const row = document.createElement('tr');
+      row.classList.add('cursor-pointer', 'hover:bg-gray-100');
+      row.onclick = () => window.location.href = `behaviour-student-details.html?id=${doc.id}`;
+      row.innerHTML = `
+        <td class="py-2 px-4">${data.name || 'Unnamed'}</td>
+        <td class="py-2 px-4">${data.year || '-'}</td>
+        <td class="py-2 px-4">${data.timeoutPass || 'N'}</td>
+      `;
+      return row;
+    }
+
+    function fetchStudents() {
+      db.collection('students').get()
+        .then(snapshot => {
+          tableBody.innerHTML = '';
+          snapshot.forEach(doc => {
+            tableBody.appendChild(renderStudentRow(doc));
+          });
+        })
+        .catch(error => {
+          tableBody.innerHTML = `<tr><td colspan="3" class="text-red-600 text-center py-4">Failed to load data</td></tr>`;
+          console.error('Error:', error);
+        });
+    }
+
+    searchInput.addEventListener('input', () => {
+      const filter = searchInput.value.toLowerCase();
+      const rows = tableBody.getElementsByTagName('tr');
+      for (let row of rows) {
+        const name = row.children[0]?.textContent?.toLowerCase() || '';
+        row.style.display = name.includes(filter) ? '' : 'none';
+      }
+    });
+
+    fetchStudents();
+  </script>
+</body>
+</html>
