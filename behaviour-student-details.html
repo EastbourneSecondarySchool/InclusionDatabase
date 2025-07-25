@@ -1,124 +1,145 @@
+<!-- Updated behaviourdatabase.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Behaviour Details</title>
+  <title>Behaviour Database</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  
-  <!-- Use Firebase v8 scripts (not v9) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import {
+      getFirestore, collection, getDocs, addDoc, doc
+    } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
-  <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
       projectId: "pastoraldatabase",
       storageBucket: "pastoraldatabase.firebasestorage.app",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function fetchStudents() {
+      const tbody = document.getElementById('studentsTableBody');
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Loading students...</td></tr>';
+      try {
+        const snapshot = await getDocs(collection(db, 'students'));
+        tbody.innerHTML = '';
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No students found.</td></tr>';
+        }
+        snapshot.forEach(docSnap => {
+          const student = docSnap.data();
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-gray-100";
+
+          const nameTd = document.createElement('td');
+          const nameLink = document.createElement('a');
+          nameLink.href = `behaviour-student-details.html?id=${docSnap.id}`;
+          nameLink.className = "text-blue-600 hover:underline";
+          nameLink.textContent = student.name;
+          nameTd.className = "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900";
+          nameTd.appendChild(nameLink);
+
+          const yearTd = document.createElement('td');
+          yearTd.textContent = student.year || '';
+          yearTd.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-500";
+
+          const timeoutTd = document.createElement('td');
+          timeoutTd.textContent = student.timeoutPass || 'N';
+          timeoutTd.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-500";
+
+          const actionsTd = document.createElement('td');
+          actionsTd.innerHTML = `
+            <button onclick="addIncident('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded mr-2 hover:bg-indigo-700 text-sm">Add Behaviour</button>
+            <button onclick="addIsolation('${docSnap.id}')" class="bg-yellow-600 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-700 text-sm">Add Isolation</button>
+            <button onclick="addExclusion('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Add Exclusion</button>
+          `;
+          actionsTd.className = "px-6 py-4 whitespace-nowrap text-sm";
+
+          tr.appendChild(nameTd);
+          tr.appendChild(yearTd);
+          tr.appendChild(timeoutTd);
+          tr.appendChild(actionsTd);
+
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error loading students:', err);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-600">Failed to load students.</td></tr>';
+      }
+    }
+
+    window.addIncident = async (id) => {
+      const note = prompt("Enter behaviour incident");
+      if (!note) return;
+      try {
+        await addDoc(collection(db, `students/${id}/behaviourIncidents`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Incident added successfully.");
+      } catch (e) {
+        console.error("Error adding incident:", e);
+        alert("Failed to add incident.");
+      }
+    };
+
+    window.addIsolation = async (id) => {
+      const note = prompt("Enter isolation reason");
+      if (!note) return;
+      try {
+        await addDoc(collection(db, `students/${id}/isolations`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Isolation added successfully.");
+      } catch (e) {
+        console.error("Error adding isolation:", e);
+        alert("Failed to add isolation.");
+      }
+    };
+
+    window.addExclusion = async (id) => {
+      const note = prompt("Enter exclusion reason");
+      if (!note) return;
+      try {
+        await addDoc(collection(db, `students/${id}/exclusions`), {
+          reason: note,
+          timestamp: new Date()
+        });
+        alert("Exclusion added successfully.");
+      } catch (e) {
+        console.error("Error adding exclusion:", e);
+        alert("Failed to add exclusion.");
+      }
+    };
+
+    fetchStudents();
   </script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Return to Behaviour Database</button>
-    <h1 id="studentName" class="text-3xl font-bold mb-8 text-center">Loading student...</h1>
-
-    <section class="mb-8">
-      <h2 class="text-2xl font-semibold mb-4">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="list-disc list-inside text-gray-700">
-        <li>Loading behaviour incidents...</li>
-      </ul>
-    </section>
-
-    <section class="mb-8">
-      <h2 class="text-2xl font-semibold mb-4">Isolations</h2>
-      <ul id="isolationList" class="list-disc list-inside text-gray-700">
-        <li>Loading isolations...</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="text-2xl font-semibold mb-4">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc list-inside text-gray-700">
-        <li>Loading exclusions...</li>
-      </ul>
-    </section>
+  <div class="max-w-6xl mx-auto bg-white shadow rounded-lg p-6">
+    <button onclick="window.location.href='index.html'" class="mb-4 text-blue-600 hover:underline">← Return to Dashboard</button>
+    <h1 class="text-3xl font-bold mb-6">Behaviour Database</h1>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeout Pass</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="studentsTableBody" class="bg-white divide-y divide-gray-200">
+        <!-- Student rows rendered here -->
+      </tbody>
+    </table>
   </div>
-
-  <script>
-    // Get student ID from URL query param
-    const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get('id');
-
-    const studentNameEl = document.getElementById('studentName');
-    const behaviourList = document.getElementById('behaviourList');
-    const isolationList = document.getElementById('isolationList');
-    const exclusionList = document.getElementById('exclusionList');
-
-    function formatTimestamp(timestamp) {
-      if (!timestamp) return 'Unknown date';
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toLocaleString();
-    }
-
-    function renderList(listEl, items, emptyMessage) {
-      listEl.innerHTML = '';
-      if (!items || items.length === 0) {
-        listEl.innerHTML = `<li>${emptyMessage}</li>`;
-        return;
-      }
-      items.forEach(item => {
-        const li = document.createElement('li');
-        // For behaviourIncidents and others, assume structure {text: "...", timestamp: ...} or {reason: "...", timestamp: ...}
-        const description = item.text || item.reason || 'No details';
-        const time = formatTimestamp(item.timestamp);
-        li.textContent = `${description} (on ${time})`;
-        listEl.appendChild(li);
-      });
-    }
-
-    async function loadStudent() {
-      if (!studentId) {
-        studentNameEl.textContent = 'No student ID provided';
-        behaviourList.innerHTML = '';
-        isolationList.innerHTML = '';
-        exclusionList.innerHTML = '';
-        return;
-      }
-
-      try {
-        const doc = await db.collection('students').doc(studentId).get();
-        if (!doc.exists) {
-          studentNameEl.textContent = 'Student not found';
-          behaviourList.innerHTML = '';
-          isolationList.innerHTML = '';
-          exclusionList.innerHTML = '';
-          return;
-        }
-
-        const data = doc.data();
-        studentNameEl.textContent = data.name || 'Unnamed Student';
-
-        renderList(behaviourList, data.behaviourIncidents, 'No behaviour incidents found.');
-        renderList(isolationList, data.isolations, 'No isolations found.');
-        renderList(exclusionList, data.exclusions, 'No exclusions found.');
-      } catch (error) {
-        studentNameEl.textContent = 'Error loading student data';
-        behaviourList.innerHTML = '<li>Error loading behaviour incidents.</li>';
-        isolationList.innerHTML = '<li>Error loading isolations.</li>';
-        exclusionList.innerHTML = '<li>Error loading exclusions.</li>';
-        console.error('Error loading student data:', error);
-      }
-    }
-
-    loadStudent();
-  </script>
 </body>
 </html>
