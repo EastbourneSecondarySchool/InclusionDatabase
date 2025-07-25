@@ -6,20 +6,47 @@
   <title>Admin Panel</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #444; border-bottom: none; background-color: #eee; margin-right: 5px; }
-    .tab-btn.active { background-color: white; font-weight: bold; }
-    .tab-content { border: 1px solid #444; padding: 15px; margin-top: -1px; }
-    .hidden { display: none !important; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+    .tab-btn {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 1px solid #444;
+      border-bottom: none;
+      background-color: #eee;
+      margin-right: 5px;
+    }
+    .tab-btn.active {
+      background-color: white;
+      font-weight: bold;
+    }
+    .tab-content {
+      border: 1px solid #444;
+      padding: 15px;
+      margin-top: -1px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: left;
+    }
     .modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5);
-      display: flex;
+      display: none; /* hidden by default */
       justify-content: center;
       align-items: center;
       z-index: 1000;
+    }
+    .modal.show {
+      display: flex !important;
     }
     .modal-content {
       background: white;
@@ -28,12 +55,30 @@
       border-radius: 5px;
       position: relative;
     }
-    .modal-content h3 { margin-top: 0; }
-    .modal-content label { display: block; margin-top: 10px; }
-    .modal-content input, .modal-content select { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
-    .modal-buttons { margin-top: 15px; text-align: right; }
-    .modal-buttons button { margin-left: 10px; padding: 6px 12px; }
-    #noticesList li { margin-bottom: 8px; }
+    .modal-content h3 {
+      margin-top: 0;
+    }
+    .modal-content label {
+      display: block;
+      margin-top: 10px;
+    }
+    .modal-content input, .modal-content select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+    .modal-buttons {
+      margin-top: 15px;
+      text-align: right;
+    }
+    .modal-buttons button {
+      margin-left: 10px;
+      padding: 6px 12px;
+    }
+    #noticesList li {
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -65,7 +110,7 @@
     <ul id="noticesList"></ul>
   </div>
 
-  <div id="editStaffModal" class="modal hidden">
+  <div id="editStaffModal" class="modal">
     <div class="modal-content">
       <h3 id="staffModalTitle">Add Staff Member</h3>
       <label for="staffUsername">Username:</label>
@@ -139,8 +184,15 @@
     const staffRoleSelect = document.getElementById('staffRole');
     const staffModalTitle = document.getElementById('staffModalTitle');
 
-    const openModal = () => editStaffModal.classList.remove('hidden');
-    const closeModal = () => editStaffModal.classList.add('hidden');
+    // Open and close modal with show class and style display
+    const openModal = () => {
+      editStaffModal.style.display = 'flex';
+      editStaffModal.classList.add('show');
+    };
+    const closeModal = () => {
+      editStaffModal.style.display = 'none';
+      editStaffModal.classList.remove('show');
+    };
 
     // Load Students
     function loadStudents() {
@@ -186,7 +238,6 @@
             const newPassword = prompt(`Enter new password for ${notice.username}:`);
             if (newPassword) {
               try {
-                // Find staff doc by username
                 const staffCol = collection(db, 'staff');
                 const q = query(staffCol, where('username', '==', notice.username));
                 const staffSnap = await getDocs(q);
@@ -194,11 +245,9 @@
                   alert('Staff user not found');
                   return;
                 }
-                // Update password for all matching staff (usually one)
                 for (const staffDoc of staffSnap.docs) {
                   await updateDoc(staffDoc.ref, { password: newPassword });
                 }
-                // Remove the notice
                 await deleteDoc(doc(db, 'passwordNotices', docSnap.id));
                 alert('Password reset successfully');
               } catch (error) {
@@ -237,7 +286,6 @@
       }
 
       try {
-        // Check if username exists
         const staffCol = collection(db, 'staff');
         const q = query(staffCol, where('username', '==', username));
         const existing = await getDocs(q);
@@ -245,7 +293,6 @@
           alert('Username already exists.');
           return;
         }
-        // Add new staff doc
         await addDoc(staffCol, { username, password, role });
         closeModal();
       } catch (error) {
