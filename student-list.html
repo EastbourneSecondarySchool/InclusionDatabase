@@ -14,6 +14,12 @@
       border: 1px solid #ccc;
       text-align: left;
     }
+    th {
+      background-color: #f4f4f4;
+    }
+    tr:hover {
+      background-color: #f0f8ff;
+    }
     a {
       color: #0066cc;
       text-decoration: none;
@@ -48,11 +54,11 @@
 <table>
   <thead>
     <tr>
-      <th>Student Name</th>
-      <th>Roblox User</th>
-      <th>Discord User</th>
-      <th>Timeout Pass (Y/N)</th>
-      <th>Notes</th>
+      <th scope="col">Student Name</th>
+      <th scope="col">Roblox User</th>
+      <th scope="col">Discord User</th>
+      <th scope="col">Timeout Pass (Y/N)</th>
+      <th scope="col">Notes</th>
     </tr>
   </thead>
   <tbody id="studentTableBody"></tbody>
@@ -66,7 +72,7 @@
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
     projectId: "pastoraldatabase",
-    storageBucket: "pastoraldatabase.appspot.com",
+    storageBucket: "pastoraldatabase.firebasestorage.app",
     messagingSenderId: "859785843482",
     appId: "1:859785843482:web:4e0e5458391c1daee592a3",
     measurementId: "G-54LQVPWPJH"
