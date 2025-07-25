@@ -163,7 +163,7 @@
 
   // Load Staff
   function loadStaff() {
-    const staffCol = collection(db, 'staff');
+    const staffCol = collection(db, 'staffUsers');
     onSnapshot(staffCol, snapshot => {
       staffTableBody.innerHTML = '';
       let idx = 1;
@@ -236,7 +236,7 @@
 
     try {
       // Check if username exists
-      const staffCol = collection(db, 'staff');
+      const staffCol = collection(db, 'staffUsers');
       const q = query(staffCol, where('username', '==', username));
       const existing = await getDocs(q);
       if (!existing.empty) {
