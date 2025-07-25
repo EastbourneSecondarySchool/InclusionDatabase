@@ -5,10 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Student Entry</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  
-  <!-- Use COMPAT versions so you can keep firebase.firestore() style -->
+
+  <!-- Firebase SDK (compat version) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+      authDomain: "pastoraldatabase.firebaseapp.com",
+      projectId: "pastoraldatabase",
+      storageBucket: "pastoraldatabase.appspot.com",
+      messagingSenderId: "859785843482",
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-8">
@@ -46,19 +60,6 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-      authDomain: "pastoraldatabase.firebaseapp.com",
-      projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.appspot.com", // 🔧 corrected!
-      messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     const form = document.getElementById('addEntryForm');
 
     form.addEventListener('submit', async (e) => {
