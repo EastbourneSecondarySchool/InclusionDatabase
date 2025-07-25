@@ -34,7 +34,7 @@
 <body>
 <script>
   // Redirect to login if not logged in
-  if (!sessionStorage.getItem('loggedInUser')) {
+  if (!localStorage.getItem('loggedInUser')) {
     window.location.href = 'login.html';
   }
 </script>
