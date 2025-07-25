@@ -146,7 +146,7 @@
     }
 
     function loadStaff() {
-      const staffCol = collection(db, 'staffUsers');
+      const staffCol = collection(db, 'staff');
       onSnapshot(staffCol, snapshot => {
         staffTableBody.innerHTML = '';
         let idx = 1;
@@ -165,7 +165,7 @@
         document.querySelectorAll('.editBtn').forEach(btn => {
           btn.addEventListener('click', async () => {
             editingStaffId = btn.dataset.id;
-            const staffDoc = await getDoc(doc(db, 'staffUsers', editingStaffId));
+            const staffDoc = await getDoc(doc(db, 'staff', editingStaffId));
             if (!staffDoc.exists()) {
               alert('Staff not found');
               return;
@@ -194,7 +194,7 @@
           resetBtn.addEventListener('click', async () => {
             const newPassword = prompt(`Enter new password for ${notice.username}:`);
             if (newPassword) {
-              const q = query(collection(db, 'staffUsers'), where('username', '==', notice.username));
+              const q = query(collection(db, 'staff'), where('username', '==', notice.username));
               const match = await getDocs(q);
               for (const userDoc of match.docs) {
                 await updateDoc(userDoc.ref, { password: newPassword });
@@ -228,7 +228,7 @@
       if (!username) return alert('Username required');
 
       try {
-        const staffCol = collection(db, 'staffUsers');
+        const staffCol = collection(db, 'staff');
         const q = query(staffCol, where('username', '==', username));
         const existing = await getDocs(q);
 
@@ -239,7 +239,7 @@
         if (editingStaffId) {
           const updateData = { username, role };
           if (password) updateData.password = password;
-          await updateDoc(doc(db, 'staffUsers', editingStaffId), updateData);
+          await updateDoc(doc(db, 'staff', editingStaffId), updateData);
         } else {
           if (!password) return alert('Password required');
           await addDoc(staffCol, { username, password, role });
@@ -255,7 +255,7 @@
       if (!editingStaffId) return;
       if (!confirm('Delete this staff member?')) return;
       try {
-        await deleteDoc(doc(db, 'staffUsers', editingStaffId));
+        await deleteDoc(doc(db, 'staff', editingStaffId));
         closeModal();
       } catch (err) {
         alert('Delete error: ' + err.message);
