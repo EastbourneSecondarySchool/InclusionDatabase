@@ -17,7 +17,6 @@
       width: 100%; padding: 10px; margin-top: 20px; background: #007bff; border: none;
       color: white; font-weight: bold; cursor: pointer; border-radius: 4px;
     }
-    button:disabled { background: #ccc; cursor: default; }
     .forgot-btn {
       margin-top: 10px; background: none; border: none; color: #007bff; cursor: pointer;
       text-decoration: underline; font-size: 0.9em; padding: 0;
@@ -69,6 +68,7 @@
     const errorMsg = document.getElementById('errorMsg');
     const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
+    // Handle login
     loginForm.addEventListener('submit', async e => {
       e.preventDefault();
       errorMsg.textContent = '';
@@ -92,20 +92,15 @@
         }
 
         let matched = false;
-        let isAdmin = false;
-
         staffSnap.forEach(doc => {
           const data = doc.data();
           if (data.password === password) {
             matched = true;
-            isAdmin = data.isAdmin === "true" || data.isAdmin === true;
+            localStorage.setItem('loggedInUser', username); // Save session
           }
         });
 
         if (matched) {
-          localStorage.setItem('loggedInUser', username);
-          localStorage.setItem('isAdmin', isAdmin);
-
           alert(`Welcome, ${username}!`);
           window.location.href = "index.html";
         } else {
@@ -116,6 +111,7 @@
       }
     });
 
+    // Handle forgot password
     forgotPasswordBtn.addEventListener('click', async () => {
       errorMsg.textContent = '';
       const username = usernameInput.value.trim();
@@ -134,6 +130,7 @@
         errorMsg.textContent = 'Error sending reset request: ' + error.message;
       }
     });
+
   </script>
 </body>
 </html>
