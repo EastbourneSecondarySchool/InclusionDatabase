@@ -3,14 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Behaviour Student Details</title>
+  <title>Student Behaviour Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Back to Behaviour Database</button>
+    <h1 class="text-3xl font-bold mb-4" id="studentName">Loading...</h1>
+    <p id="studentDetails" class="mb-6 text-gray-700"></p>
 
-  <!-- Firebase SDK v9 modular -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    <div id="behaviourContent">
+      <h2 class="text-xl font-semibold mt-6 mb-2">Behaviour Incidents</h2>
+      <ul id="incidentList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
 
+      <h2 class="text-xl font-semibold mt-6 mb-2">Isolations</h2>
+      <ul id="isolationList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
+
+      <h2 class="text-xl font-semibold mt-6 mb-2">Exclusions</h2>
+      <ul id="exclusionList" class="list-disc pl-6 space-y-2 text-gray-800"></ul>
+    </div>
+  </div>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
@@ -20,109 +36,63 @@
       appId: "1:859785843482:web:4e0e5458391c1daee592a3",
       measurementId: "G-54LQVPWPJH"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id');
 
-    const params = new URLSearchParams(window.location.search);
-    const studentId = params.get('id');
-
-    const studentNameEl = document.getElementById('studentName');
-    const behaviourList = document.getElementById('behaviourList');
+    const studentName = document.getElementById('studentName');
+    const studentDetails = document.getElementById('studentDetails');
+    const incidentList = document.getElementById('incidentList');
     const isolationList = document.getElementById('isolationList');
     const exclusionList = document.getElementById('exclusionList');
-    const debugOutput = document.getElementById('debugInfo');
 
-    function formatDate(timestamp) {
+    async function loadStudentDetails() {
       try {
-        if (!timestamp) return '';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
-        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
-      } catch {
-        return '';
-      }
-    }
-
-    function populateList(listElement, items, label) {
-      listElement.innerHTML = "";
-      if (!Array.isArray(items) || items.length === 0) {
-        listElement.innerHTML = `<li class="text-gray-500">No ${label} found.</li>`;
-        return;
-      }
-
-      items.forEach((entry, i) => {
-        const li = document.createElement('li');
-        let reason = entry.reason || entry.text || "No reason provided";
-        let time = entry.timestamp ? ` (${formatDate(entry.timestamp)})` : "";
-        li.textContent = `${reason}${time}`;
-        listElement.appendChild(li);
-      });
-    }
-
-    async function fetchStudentData() {
-      if (!studentId) {
-        studentNameEl.textContent = "No student ID provided.";
-        return;
-      }
-
-      try {
-        const docRef = doc(db, "students", studentId);
-        const docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
-          studentNameEl.textContent = "Student not found.";
-          debugOutput.textContent = "No document found for ID: " + studentId;
+        const doc = await db.collection('students').doc(studentId).get();
+        if (!doc.exists) {
+          studentName.textContent = "Student not found";
           return;
         }
 
-        const data = docSnap.data();
-        studentNameEl.textContent = data.name || "Unnamed Student";
+        const data = doc.data();
+        studentName.textContent = data.name;
+        studentDetails.textContent = `Year: ${data.year || 'N/A'} | Timeout Pass: ${data.timeoutPass || 'N/A'}`;
 
-        populateList(behaviourList, data.behaviourIncidents || [], "behaviour incidents");
-        populateList(isolationList, data.isolations || [], "isolations");
-        populateList(exclusionList, data.exclusions || [], "exclusions");
+        const formatEntry = (entry) => {
+          const date = entry.timestamp?.toDate().toLocaleString() || 'Unknown date';
+          return `${entry.text || entry.reason} (${date})`;
+        };
 
-        debugOutput.textContent = JSON.stringify(data, null, 2);
-      } catch (error) {
-        studentNameEl.textContent = "Error loading student data.";
-        debugOutput.textContent = "Error: " + error.message;
-        console.error("Error fetching student:", error);
+        // Behaviour incidents
+        (data.behaviourIncidents || []).forEach(incident => {
+          const li = document.createElement('li');
+          li.textContent = formatEntry(incident);
+          incidentList.appendChild(li);
+        });
+
+        // Isolations
+        (data.isolations || []).forEach(isolation => {
+          const li = document.createElement('li');
+          li.textContent = formatEntry(isolation);
+          isolationList.appendChild(li);
+        });
+
+        // Exclusions
+        (data.exclusions || []).forEach(exclusion => {
+          const li = document.createElement('li');
+          li.textContent = formatEntry(exclusion);
+          exclusionList.appendChild(li);
+        });
+
+      } catch (err) {
+        console.error("Error loading student data:", err);
+        studentName.textContent = "Failed to load student data.";
       }
     }
 
-    fetchStudentData();
+    loadStudentDetails();
   </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded p-6">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="text-blue-600 hover:underline mb-4">← Back to Behaviour Database</button>
-    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading student...</h1>
-
-    <div>
-      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="list-disc pl-6 text-gray-700 mb-6">
-        <li>Loading...</li>
-      </ul>
-    </div>
-
-    <div>
-      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
-      <ul id="isolationList" class="list-disc pl-6 text-gray-700 mb-6">
-        <li>Loading...</li>
-      </ul>
-    </div>
-
-    <div>
-      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc pl-6 text-gray-700 mb-6">
-        <li>Loading...</li>
-      </ul>
-    </div>
-
-    <div class="mt-8">
-      <h2 class="text-red-600 font-semibold">Debug Info</h2>
-      <pre id="debugInfo" class="bg-gray-200 p-4 rounded text-sm overflow-auto max-h-64"></pre>
-    </div>
-  </div>
 </body>
 </html>
