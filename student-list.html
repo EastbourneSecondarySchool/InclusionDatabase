@@ -105,15 +105,15 @@
         tr.appendChild(nameTd);
 
         const robloxTd = document.createElement('td');
-        robloxTd.textContent = student.robloxUser || '';
+        robloxTd.textContent = student.roblox || '';
         tr.appendChild(robloxTd);
 
         const discordTd = document.createElement('td');
-        discordTd.textContent = student.discordUser || '';
+        discordTd.textContent = student.discord || '';
         tr.appendChild(discordTd);
 
         const timeoutTd = document.createElement('td');
-        timeoutTd.textContent = student.timeoutPass ? 'Y' : 'N';
+        timeoutTd.textContent = (student.timeout === 'Y') ? 'Y' : 'N';
         tr.appendChild(timeoutTd);
 
         const notesTd = document.createElement('td');
