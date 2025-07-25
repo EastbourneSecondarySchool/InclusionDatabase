@@ -5,74 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Staff Login</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      max-width: 400px;
-      margin: auto;
-    }
-    input {
-      display: block;
-      margin: 10px 0;
-      padding: 8px;
-      width: 100%;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-    }
-    .forgot {
-      display: block;
-      margin-top: 10px;
-      color: blue;
-      cursor: pointer;
-      background: none;
-      border: none;
-      text-decoration: underline;
-      font-size: 14px;
-    }
-    .message {
-      margin-top: 15px;
-      color: red;
-    }
+    body { font-family: Arial, sans-serif; padding: 30px; max-width: 400px; margin: auto; }
+    input { display: block; margin: 10px 0; padding: 8px; width: 100%; }
+    button { padding: 10px 20px; }
+    .message { margin-top: 15px; color: red; }
   </style>
 </head>
 <body>
   <h1>Staff Login</h1>
-
   <form id="loginForm">
     <input type="text" id="username" placeholder="Username" required />
     <input type="password" id="password" placeholder="Password" required />
     <button type="submit">Login</button>
   </form>
-  <button class="forgot" id="forgotBtn">Forgot Password?</button>
-
+  <button id="forgotPasswordBtn" style="margin-top: 10px;">Forgot Password?</button>
   <div class="message" id="message"></div>
 
   <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      onValue,
+      push,
+      child,
+      get
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
       projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.appspot.com",
+      storageBucket: "pastoraldatabase.firebasestorage.app",
       messagingSenderId: "859785843482",
       appId: "1:859785843482:web:4e0e5458391c1daee592a3",
       measurementId: "G-54LQVPWPJH",
       databaseURL: "https://pastoraldatabase-default-rtdb.firebaseio.com/"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
     const loginForm = document.getElementById('loginForm');
     const messageDiv = document.getElementById('message');
-    const forgotBtn = document.getElementById('forgotBtn');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
-    // Login functionality
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       messageDiv.style.color = 'red';
@@ -87,45 +65,45 @@
       }
 
       try {
-        const staffRef = db.ref('staff');
-        staffRef.once('value', (snapshot) => {
-          const data = snapshot.val();
-          const staffEntry = Object.entries(data || {}).find(([key, staff]) =>
-            staff.username === username && staff.password === password
-          );
+        const staffRef = ref(db, 'staff');
+        let found = false;
 
-          if (!staffEntry) {
+        onValue(staffRef, (snapshot) => {
+          snapshot.forEach(childSnap => {
+            const user = childSnap.val();
+            if (user.username === username && user.password === password) {
+              found = true;
+              sessionStorage.setItem('loggedInUser', JSON.stringify({
+                id: childSnap.key,
+                username: user.username,
+                isAdmin: user.role === 'admin'
+              }));
+
+              messageDiv.style.color = 'green';
+              messageDiv.textContent = 'Login successful! Redirecting...';
+              setTimeout(() => window.location.href = 'index.html', 1000);
+            }
+          });
+
+          if (!found) {
             messageDiv.textContent = 'Invalid username or password.';
-            return;
           }
+        }, { onlyOnce: true });
 
-          messageDiv.style.color = 'green';
-          messageDiv.textContent = 'Login successful! Redirecting...';
-
-          // Save to sessionStorage (optional)
-          sessionStorage.setItem('loggedInUser', JSON.stringify({
-            username: staffEntry[1].username,
-            role: staffEntry[1].role || 'staff'
-          }));
-
-          setTimeout(() => {
-            window.location.href = 'admin.html';
-          }, 1000);
-        });
       } catch (err) {
         console.error(err);
-        messageDiv.textContent = 'An error occurred during login.';
+        messageDiv.textContent = 'Login failed. Please try again.';
       }
     });
 
-    // Forgot Password feature
-    forgotBtn.addEventListener('click', () => {
+    forgotPasswordBtn.addEventListener('click', async () => {
       const username = prompt("Enter your username:");
       if (!username) return;
 
-      const resetRef = db.ref('resetRequests');
-      resetRef.push({ username });
-      alert("Your password reset request has been sent to an admin.");
+      const noticesRef = ref(db, 'passwordNotices');
+      await push(noticesRef, { username: username.trim() });
+
+      alert('Password reset request sent to admin.');
     });
   </script>
 </body>
