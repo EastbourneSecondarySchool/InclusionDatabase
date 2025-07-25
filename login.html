@@ -82,7 +82,7 @@
       }
 
       try {
-        const staffUsersCol = collection(db, 'staffUsers');
+        const staffUsersCol = collection(db, 'staff');
         const q = query(staffUsersCol, where('username', '==', username));
         const staffSnap = await getDocs(q);
 
