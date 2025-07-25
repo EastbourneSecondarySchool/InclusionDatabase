@@ -3,50 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Behaviour Details</title>
+  <title>Behaviour Student Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  
-  <!-- Firebase (Compat Version) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script>
+    // Your Firebase config here
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
       projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.appspot.com",
+      storageBucket: "pastoraldatabase.firebasestorage.app",
       messagingSenderId: "859785843482",
       appId: "1:859785843482:web:4e0e5458391c1daee592a3",
       measurementId: "G-54LQVPWPJH"
     };
 
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
   </script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Back to Behaviour List</button>
-    <h1 class="text-2xl font-bold mb-4" id="studentName">Student Details</h1>
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Return to Behaviour Database</button>
+    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading Student Details...</h1>
 
-    <div id="behaviourSection" class="mb-6">
+    <section>
       <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
-    </div>
+      <ul id="behaviourList" class="list-disc pl-6 mb-6 text-gray-700">
+        <li>Loading...</li>
+      </ul>
+    </section>
 
-    <div id="isolationSection" class="mb-6">
+    <section>
       <h2 class="text-xl font-semibold mb-2">Isolations</h2>
-      <ul id="isolationList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
-    </div>
+      <ul id="isolationList" class="list-disc pl-6 mb-6 text-gray-700">
+        <li>Loading...</li>
+      </ul>
+    </section>
 
-    <div id="exclusionSection" class="mb-6">
+    <section>
       <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
-    </div>
+      <ul id="exclusionList" class="list-disc pl-6 mb-6 text-gray-700">
+        <li>Loading...</li>
+      </ul>
+    </section>
   </div>
 
   <script>
+    // Get student ID from URL query string
     const params = new URLSearchParams(window.location.search);
     const studentId = params.get('id');
 
@@ -55,64 +61,68 @@
       window.location.href = 'behaviourdatabase.html';
     }
 
-    const behaviourList = document.getElementById('behaviourList');
-    const isolationList = document.getElementById('isolationList');
-    const exclusionList = document.getElementById('exclusionList');
-    const studentName = document.getElementById('studentName');
-
-    function formatTimestamp(ts) {
-      if (!ts) return '';
-      const date = ts.toDate();
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-    }
-
     async function loadStudentDetails() {
       try {
-        const doc = await db.collection('students').doc(studentId).get();
+        const docRef = db.collection('students').doc(studentId);
+        const doc = await docRef.get();
+
         if (!doc.exists) {
-          studentName.textContent = "Student not found.";
+          document.getElementById('studentName').textContent = 'Student not found';
+          ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
+            document.getElementById(id).innerHTML = '<li class="text-red-600">No data available.</li>';
+          });
           return;
         }
 
         const data = doc.data();
-        studentName.textContent = data.name || 'Unnamed Student';
+        console.log('Fetched student data:', data);
 
-        const behaviour = data.behaviourIncidents || [];
-        if (behaviour.length === 0) {
-          behaviourList.innerHTML = '<li class="text-gray-400 italic">No incidents recorded.</li>';
-        } else {
-          behaviour.forEach(item => {
+        // Show student name
+        document.getElementById('studentName').textContent = data.name || 'Unnamed Student';
+
+        // Helper function to format timestamp nicely
+        function formatDate(timestamp) {
+          if (!timestamp) return '';
+          const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+          return date.toLocaleString();
+        }
+
+        // Render lists
+        function renderList(containerId, items, textKey = 'text', reasonKey = 'reason') {
+          const container = document.getElementById(containerId);
+          container.innerHTML = '';
+
+          if (!Array.isArray(items) || items.length === 0) {
+            container.innerHTML = '<li>No entries found.</li>';
+            return;
+          }
+
+          items.forEach(item => {
+            let description = '';
+            if (item[textKey]) {
+              description = item[textKey];
+            } else if (item[reasonKey]) {
+              description = item[reasonKey];
+            } else {
+              description = 'No description';
+            }
+            const timeStr = item.timestamp ? ` (on ${formatDate(item.timestamp)})` : '';
             const li = document.createElement('li');
-            li.textContent = `${item.text || 'No details'} – ${formatTimestamp(item.timestamp)}`;
-            behaviourList.appendChild(li);
+            li.textContent = description + timeStr;
+            container.appendChild(li);
           });
         }
 
-        const isolations = data.isolations || [];
-        if (isolations.length === 0) {
-          isolationList.innerHTML = '<li class="text-gray-400 italic">No isolations recorded.</li>';
-        } else {
-          isolations.forEach(item => {
-            const li = document.createElement('li');
-            li.textContent = `${item.reason || 'No reason'} – ${formatTimestamp(item.timestamp)}`;
-            isolationList.appendChild(li);
-          });
-        }
-
-        const exclusions = data.exclusions || [];
-        if (exclusions.length === 0) {
-          exclusionList.innerHTML = '<li class="text-gray-400 italic">No exclusions recorded.</li>';
-        } else {
-          exclusions.forEach(item => {
-            const li = document.createElement('li');
-            li.textContent = `${item.reason || 'No reason'} – ${formatTimestamp(item.timestamp)}`;
-            exclusionList.appendChild(li);
-          });
-        }
+        renderList('behaviourList', data.behaviourIncidents);
+        renderList('isolationList', data.isolations);
+        renderList('exclusionList', data.exclusions);
 
       } catch (error) {
-        console.error('Error fetching student data:', error);
-        studentName.textContent = "Error loading student.";
+        console.error('Error loading student details:', error);
+        document.getElementById('studentName').textContent = 'Error loading student details';
+        ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
+          document.getElementById(id).innerHTML = '<li class="text-red-600">Failed to load data.</li>';
+        });
       }
     }
 
