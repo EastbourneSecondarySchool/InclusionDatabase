@@ -2,277 +2,215 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      cursor: pointer;
-      border: 1px solid #444;
-      border-bottom: none;
-      background-color: #eee;
-      margin-right: 5px;
-    }
-    .tab-btn.active {
-      background-color: white;
-      font-weight: bold;
-    }
-    .tab-content {
-      border: 1px solid #444;
-      padding: 15px;
-      margin-top: -1px;
-    }
-    .hidden {
-      display: none;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #aaa;
-      padding: 8px;
-      text-align: left;
-    }
-    .modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .modal.show {
-      display: flex;
-    }
-    .modal-content {
-      background: white;
-      padding: 20px;
-      width: 300px;
-      border-radius: 5px;
-      position: relative;
-    }
-    .modal-content label {
-      display: block;
-      margin-top: 10px;
-    }
-    .modal-content input,
-    .modal-content select {
-      width: 100%;
-      padding: 6px;
-      margin-top: 4px;
-      box-sizing: border-box;
-    }
-    .modal-buttons {
-      margin-top: 15px;
-      text-align: right;
-    }
-    .modal-buttons button {
-      margin-left: 10px;
-      padding: 6px 12px;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #444; border-bottom: none; background-color: #eee; margin-right: 5px; }
+    .tab-btn.active { background-color: white; font-weight: bold; }
+    .tab-content { border: 1px solid #444; padding: 15px; margin-top: -1px; }
+    .hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 20px; width: 300px; border-radius: 5px; position: relative; }
+    .modal-content h3 { margin-top: 0; }
+    .modal-content label { display: block; margin-top: 10px; }
+    .modal-content input, .modal-content select { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
+    .modal-buttons { margin-top: 15px; text-align: right; }
+    .modal-buttons button { margin-left: 10px; padding: 6px 12px; }
+    #noticesList li { margin-bottom: 8px; }
   </style>
 </head>
 <body>
+  <h1>Admin Panel</h1>
 
-<h1>Admin Panel</h1>
+  <button class="tab-btn active" data-tab="studentsTab">Students</button>
+  <button class="tab-btn" data-tab="staffTab">Staff</button>
+  <button class="tab-btn" data-tab="noticesTab">Password Notices</button>
 
-<button class="tab-btn active" data-tab="studentsTab">Students</button>
-<button class="tab-btn" data-tab="staffTab">Staff</button>
-<button class="tab-btn" data-tab="noticesTab">Password Notices</button>
+  <div id="studentsTab" class="tab-content">
+    <h2>Students</h2>
+    <table id="studentsTable">
+      <thead><tr><th>#</th><th>Name</th><th>Email</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-<!-- Students -->
-<div id="studentsTab" class="tab-content">
-  <h2>Students</h2>
-  <table id="studentsTable">
-    <thead>
-      <tr>
-        <th>Name</th><th>Roblox</th><th>Discord</th><th>Timeout</th><th>Notes</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <div id="staffTab" class="tab-content hidden">
+    <h2>Staff Members</h2>
+    <button id="addStaffBtn">Add Staff Member</button>
+    <table id="staffTable">
+      <thead><tr><th>#</th><th>Username</th><th>Role</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-<!-- Staff -->
-<div id="staffTab" class="tab-content hidden">
-  <h2>Staff</h2>
-  <button id="addStaffBtn">Add Staff Member</button>
-  <table id="staffTable">
-    <thead>
-      <tr><th>Username</th><th>Role</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <div id="noticesTab" class="tab-content hidden">
+    <h2>Forgot Password Notices</h2>
+    <ul id="noticesList"></ul>
+  </div>
 
-<!-- Password Notices -->
-<div id="noticesTab" class="tab-content hidden">
-  <h2>Password Reset Requests</h2>
-  <ul id="noticesList"></ul>
-</div>
-
-<!-- Add Staff Modal -->
-<div id="editStaffModal" class="modal">
-  <div class="modal-content">
-    <h3>Add Staff Member</h3>
-    <label for="staffUsername">Username:</label>
-    <input type="text" id="staffUsername" />
-    <label for="staffPassword">Password:</label>
-    <input type="password" id="staffPassword" />
-    <label for="staffRole">Role:</label>
-    <select id="staffRole">
-      <option value="staff">Staff</option>
-      <option value="admin">Admin</option>
-    </select>
-    <div class="modal-buttons">
-      <button id="cancelStaffBtn">Cancel</button>
-      <button id="saveStaffBtn">Save</button>
+  <div id="editStaffModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="staffModalTitle">Add Staff Member</h3>
+      <label for="staffUsername">Username:</label>
+      <input type="text" id="staffUsername" />
+      <label for="staffPassword">Password:</label>
+      <input type="password" id="staffPassword" />
+      <label for="staffRole">Role:</label>
+      <select id="staffRole">
+        <option value="staff">Staff</option>
+        <option value="admin">Admin</option>
+      </select>
+      <div class="modal-buttons">
+        <button id="cancelStaffBtn">Cancel</button>
+        <button id="saveStaffBtn">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import {
-    getDatabase, ref, onValue, push, set, remove
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      onValue,
+      push,
+      set,
+      remove
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-    authDomain: "pastoraldatabase.firebaseapp.com",
-    projectId: "pastoraldatabase",
-    storageBucket: "pastoraldatabase.appspot.com",
-    messagingSenderId: "859785843482",
-    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-    measurementId: "G-54LQVPWPJH"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+      authDomain: "pastoraldatabase.firebaseapp.com",
+      projectId: "pastoraldatabase",
+      storageBucket: "pastoraldatabase.firebasestorage.app",
+      messagingSenderId: "859785843482",
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  // Tabs
-  const tabs = document.querySelectorAll('.tab-btn');
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-      tabs.forEach(b => b.classList.remove('active'));
-      document.getElementById(btn.dataset.tab).classList.remove('hidden');
-      btn.classList.add('active');
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabContents = {
+      studentsTab: document.getElementById('studentsTab'),
+      staffTab: document.getElementById('staffTab'),
+      noticesTab: document.getElementById('noticesTab')
+    };
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        Object.values(tabContents).forEach(tab => tab.classList.add('hidden'));
+        tabContents[btn.dataset.tab].classList.remove('hidden');
+      });
     });
-  });
 
-  // Load Students
-  const studentsTable = document.querySelector('#studentsTable tbody');
-  const loadStudents = () => {
-    onValue(ref(db, 'students'), snapshot => {
-      studentsTable.innerHTML = '';
-      const data = snapshot.val();
-      if (data) {
-        Object.values(data).forEach(student => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${student.name || ''}</td>
-            <td>${student.roblox || ''}</td>
-            <td>${student.discord || ''}</td>
-            <td>${student.timeout || 'N'}</td>
-            <td>${student.notes || ''}</td>
-          `;
-          studentsTable.appendChild(row);
-        });
-      }
+    const studentsTableBody = document.querySelector('#studentsTable tbody');
+    const staffTableBody = document.querySelector('#staffTable tbody');
+    const noticesList = document.getElementById('noticesList');
+
+    const editStaffModal = document.getElementById('editStaffModal');
+    const staffUsernameInput = document.getElementById('staffUsername');
+    const staffPasswordInput = document.getElementById('staffPassword');
+    const staffRoleSelect = document.getElementById('staffRole');
+    const staffModalTitle = document.getElementById('staffModalTitle');
+
+    const openModal = () => editStaffModal.classList.remove('hidden');
+    const closeModal = () => editStaffModal.classList.add('hidden');
+
+    function loadStudents() {
+      const studentsRef = ref(db, 'students');
+      onValue(studentsRef, snapshot => {
+        studentsTableBody.innerHTML = '';
+        const data = snapshot.val();
+        if (data) {
+          Object.entries(data).forEach(([_, student], index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${index + 1}</td><td>${student.name || ''}</td><td>${student.email || ''}</td>`;
+            studentsTableBody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function loadStaff() {
+      const staffRef = ref(db, 'staff');
+      onValue(staffRef, snapshot => {
+        staffTableBody.innerHTML = '';
+        const data = snapshot.val();
+        if (data) {
+          Object.entries(data).forEach(([_, staff], index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${index + 1}</td><td>${staff.username || ''}</td><td>${staff.role || ''}</td>`;
+            staffTableBody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function loadNotices() {
+      const noticesRef = ref(db, 'passwordNotices');
+      onValue(noticesRef, snapshot => {
+        noticesList.innerHTML = '';
+        const data = snapshot.val();
+        if (data) {
+          Object.entries(data).forEach(([key, notice]) => {
+            const li = document.createElement('li');
+            li.innerHTML = `${notice.username} requested reset. <button data-id="${key}" data-username="${notice.username}">Reset</button>`;
+            li.querySelector('button').addEventListener('click', async () => {
+              const newPassword = prompt(`Enter new password for ${notice.username}`);
+              if (newPassword) {
+                const staffRef = ref(db, 'staff');
+                onValue(staffRef, snapshot => {
+                  const all = snapshot.val();
+                  if (all) {
+                    Object.entries(all).forEach(([id, staff]) => {
+                      if (staff.username === notice.username) {
+                        set(ref(db, `staff/${id}`), { ...staff, password: newPassword });
+                        remove(ref(db, `passwordNotices/${key}`));
+                      }
+                    });
+                  }
+                }, { onlyOnce: true });
+              }
+            });
+            noticesList.appendChild(li);
+          });
+        }
+      });
+    }
+
+    document.getElementById('addStaffBtn').addEventListener('click', () => {
+      staffModalTitle.textContent = 'Add Staff Member';
+      staffUsernameInput.value = '';
+      staffPasswordInput.value = '';
+      staffRoleSelect.value = 'staff';
+      openModal();
     });
-  };
 
-  // Load Staff
-  const staffTable = document.querySelector('#staffTable tbody');
-  const loadStaff = () => {
-    onValue(ref(db, 'staff'), snapshot => {
-      staffTable.innerHTML = '';
-      const data = snapshot.val();
-      if (data) {
-        Object.values(data).forEach(staff => {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${staff.username}</td><td>${staff.role}</td>`;
-          staffTable.appendChild(row);
-        });
-      }
+    document.getElementById('cancelStaffBtn').addEventListener('click', () => {
+      closeModal();
     });
-  };
 
-  // Load Notices
-  const noticesList = document.getElementById('noticesList');
-  const loadNotices = () => {
-    onValue(ref(db, 'resetRequests'), snapshot => {
-      noticesList.innerHTML = '';
-      const data = snapshot.val();
-      if (data) {
-        Object.entries(data).forEach(([key, req]) => {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            ${req.username} requested a password reset.
-            <button onclick="resetPassword('${key}', '${req.username}')">Reset</button>
-          `;
-          noticesList.appendChild(li);
-        });
-      }
+    document.getElementById('saveStaffBtn').addEventListener('click', async () => {
+      const username = staffUsernameInput.value.trim();
+      const password = staffPasswordInput.value.trim();
+      const role = staffRoleSelect.value;
+
+      if (!username || !password) return alert('All fields required.');
+      const staffRef = ref(db, 'staff');
+      const newRef = push(staffRef);
+      await set(newRef, { username, password, role });
+      closeModal();
     });
-  };
 
-  // Reset password
-  window.resetPassword = async (key, username) => {
-    const newPass = prompt(`Enter new password for ${username}:`);
-    if (!newPass) return;
-
-    const staffRef = ref(db, 'staff');
-    onValue(staffRef, snapshot => {
-      const data = snapshot.val();
-      const staffKey = Object.keys(data || {}).find(k => data[k].username === username);
-      if (staffKey) {
-        set(ref(db, `staff/${staffKey}`), {
-          ...data[staffKey],
-          password: newPass
-        });
-        remove(ref(db, `resetRequests/${key}`));
-        alert('Password reset successfully.');
-      } else {
-        alert('Staff member not found.');
-      }
-    }, { onlyOnce: true });
-  };
-
-  // Add Staff Modal Logic
-  const modal = document.getElementById('editStaffModal');
-  const showModal = () => modal.classList.add('show');
-  const hideModal = () => modal.classList.remove('show');
-
-  document.getElementById('addStaffBtn').addEventListener('click', showModal);
-  document.getElementById('cancelStaffBtn').addEventListener('click', hideModal);
-  document.getElementById('saveStaffBtn').addEventListener('click', async () => {
-    const username = document.getElementById('staffUsername').value.trim();
-    const password = document.getElementById('staffPassword').value;
-    const role = document.getElementById('staffRole').value;
-
-    if (!username || !password) return alert("Fill all fields");
-
-    const newStaffRef = push(ref(db, 'staff'));
-    await set(newStaffRef, { username, password, role });
-    hideModal();
-    alert('Staff member added!');
-  });
-
-  // Init
-  loadStudents();
-  loadStaff();
-  loadNotices();
-</script>
-
+    loadStudents();
+    loadStaff();
+    loadNotices();
+  </script>
 </body>
 </html>
