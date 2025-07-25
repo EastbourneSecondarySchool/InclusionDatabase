@@ -1,63 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Login</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel Login</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 60px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      text-align: center;
+    body { font-family: Arial, sans-serif; padding: 40px; background: #f7f7f7; }
+    .login-container {
+      background: white; padding: 20px 30px; max-width: 350px; margin: auto; border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    .button {
-      margin-top: 20px;
-      display: inline-block;
-      background: #0066cc;
-      color: white;
-      padding: 10px 20px;
-      text-decoration: none;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+    button {
+      width: 100%; padding: 10px; margin-top: 20px; background: #007bff; border: none;
+      color: white; font-weight: bold; cursor: pointer; border-radius: 4px;
     }
-
-    input {
-      display: block;
-      margin: 10px auto;
-      width: 90%;
-      padding: 10px;
-      font-size: 16px;
+    button:disabled { background: #ccc; cursor: default; }
+    .forgot-btn {
+      margin-top: 10px; background: none; border: none; color: #007bff; cursor: pointer;
+      text-decoration: underline; font-size: 0.9em; padding: 0;
     }
-
-    h1 {
-      margin-bottom: 20px;
-    }
+    .error { color: red; margin-top: 15px; }
   </style>
 </head>
 <body>
-  <h1>Admin Login</h1>
-  <input type="text" id="username" placeholder="Username">
-  <input type="password" id="password" placeholder="Password">
-  <button class="button" onclick="login()">Login</button>
-  <a href="index.html" class="button">Return</a>
+  <div class="login-container">
+    <h2>Admin Panel Login</h2>
+    <form id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" autocomplete="username" required />
+      <label for="password">Password:</label>
+      <input type="password" id="password" autocomplete="current-password" required />
+      <button type="submit" id="loginBtn">Login</button>
+      <button type="button" class="forgot-btn" id="forgotPasswordBtn">Forgot Password?</button>
+    </form>
+    <div class="error" id="errorMsg"></div>
+  </div>
 
-  <script>
-    function login() {
-      const u = document.getElementById('username').value;
-      const p = document.getElementById('password').value;
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs,
+      addDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-      if (u === "Admin" && p === "EastbournePastoralAdmin") {
-        sessionStorage.setItem("loggedInUser", u);
-        sessionStorage.setItem("isAdmin", "true");
-        window.location.href = "admin.html";
-      } else {
-        alert("Access Denied");
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+      authDomain: "pastoraldatabase.firebaseapp.com",
+      projectId: "pastoraldatabase",
+      storageBucket: "pastoraldatabase.firebasestorage.app",
+      messagingSenderId: "859785843482",
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const errorMsg = document.getElementById('errorMsg');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+
+    loginForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      errorMsg.textContent = '';
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        errorMsg.textContent = 'Please enter both username and password.';
+        return;
       }
-    }
+
+      try {
+        const staffCol = collection(db, 'staff');
+        const q = query(staffCol, where('username', '==', username));
+        const staffSnap = await getDocs(q);
+
+        if (staffSnap.empty) {
+          errorMsg.textContent = 'Invalid username or password.';
+          return;
+        }
+
+        let matched = false;
+        let role = null;
+
+        staffSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.password === password) {
+            matched = true;
+            role = data.role || 'staff'; // default to 'staff' if no role field
+          }
+        });
+
+        if (!matched) {
+          errorMsg.textContent = 'Invalid username or password.';
+          return;
+        }
+
+        if (role !== 'admin') {
+          errorMsg.textContent = 'Access denied: Admins only.';
+          return;
+        }
+
+        alert(`Welcome, Admin ${username}!`);
+        // Redirect to admin panel homepage (adjust URL as needed)
+        window.location.href = "admin.html";
+      } catch (error) {
+        errorMsg.textContent = 'Error logging in: ' + error.message;
+      }
+    });
+
+    forgotPasswordBtn.addEventListener('click', async () => {
+      errorMsg.textContent = '';
+      const username = usernameInput.value.trim();
+      if (!username) {
+        errorMsg.textContent = 'Enter your username to reset password.';
+        return;
+      }
+      try {
+        const noticesCol = collection(db, 'passwordNotices');
+        await addDoc(noticesCol, {
+          username,
+          requestedAt: new Date().toISOString()
+        });
+        alert('Password reset request sent. Admin will contact you.');
+      } catch (error) {
+        errorMsg.textContent = 'Error sending reset request: ' + error.message;
+      }
+    });
   </script>
 </body>
 </html>
