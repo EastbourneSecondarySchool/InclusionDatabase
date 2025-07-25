@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Behaviour Details</title>
+  <title>Behaviour Student Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <!-- Use Firebase v8 scripts for compatibility -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -22,89 +24,107 @@
   </script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white rounded shadow p-6">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-4 text-blue-600 hover:underline">← Back to Behaviour Database</button>
-    <h1 class="text-2xl font-bold mb-4" id="studentName">Loading...</h1>
+  <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Return to Behaviour Database</button>
+    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading student...</h1>
 
-    <div id="entriesContainer" class="space-y-6">
-      <div>
-        <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
-        <ul id="incidentsList" class="space-y-2"></ul>
-      </div>
+    <section>
+      <h2 class="text-2xl font-semibold mb-3">Behaviour Incidents</h2>
+      <ul id="behaviourList" class="list-disc list-inside mb-8 text-gray-700">
+        <li>Loading behaviour incidents...</li>
+      </ul>
+    </section>
 
-      <div>
-        <h2 class="text-xl font-semibold mb-2">Isolations</h2>
-        <ul id="isolationsList" class="space-y-2"></ul>
-      </div>
+    <section>
+      <h2 class="text-2xl font-semibold mb-3">Isolations</h2>
+      <ul id="isolationList" class="list-disc list-inside mb-8 text-gray-700">
+        <li>Loading isolations...</li>
+      </ul>
+    </section>
 
-      <div>
-        <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
-        <ul id="exclusionsList" class="space-y-2"></ul>
-      </div>
-    </div>
+    <section>
+      <h2 class="text-2xl font-semibold mb-3">Exclusions</h2>
+      <ul id="exclusionList" class="list-disc list-inside mb-8 text-gray-700">
+        <li>Loading exclusions...</li>
+      </ul>
+    </section>
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get('id');
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get('id');
+
+    const studentNameEl = document.getElementById('studentName');
+    const behaviourList = document.getElementById('behaviourList');
+    const isolationList = document.getElementById('isolationList');
+    const exclusionList = document.getElementById('exclusionList');
 
     if (!studentId) {
       alert('No student ID provided.');
-      window.location.href = 'behaviourdatabase.html';
+      studentNameEl.textContent = 'Error: No student ID';
+      behaviourList.innerHTML = '';
+      isolationList.innerHTML = '';
+      exclusionList.innerHTML = '';
+    } else {
+      db.collection('students').doc(studentId).get()
+        .then(doc => {
+          if (!doc.exists) {
+            studentNameEl.textContent = 'Student not found';
+            behaviourList.innerHTML = '';
+            isolationList.innerHTML = '';
+            exclusionList.innerHTML = '';
+            return;
+          }
+          const data = doc.data();
+          studentNameEl.textContent = data.name || 'Unnamed Student';
+
+          // Render behaviour incidents
+          if (data.behaviourIncidents && data.behaviourIncidents.length > 0) {
+            behaviourList.innerHTML = '';
+            data.behaviourIncidents.forEach(incident => {
+              const timeStr = incident.timestamp ? new Date(incident.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
+              const li = document.createElement('li');
+              li.textContent = `${incident.text} (on ${timeStr})`;
+              behaviourList.appendChild(li);
+            });
+          } else {
+            behaviourList.innerHTML = '<li>No behaviour incidents recorded.</li>';
+          }
+
+          // Render isolations
+          if (data.isolations && data.isolations.length > 0) {
+            isolationList.innerHTML = '';
+            data.isolations.forEach(isolation => {
+              const timeStr = isolation.timestamp ? new Date(isolation.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
+              const li = document.createElement('li');
+              li.textContent = `${isolation.reason} (on ${timeStr})`;
+              isolationList.appendChild(li);
+            });
+          } else {
+            isolationList.innerHTML = '<li>No isolations recorded.</li>';
+          }
+
+          // Render exclusions
+          if (data.exclusions && data.exclusions.length > 0) {
+            exclusionList.innerHTML = '';
+            data.exclusions.forEach(exclusion => {
+              const timeStr = exclusion.timestamp ? new Date(exclusion.timestamp.seconds * 1000).toLocaleString() : 'Unknown date';
+              const li = document.createElement('li');
+              li.textContent = `${exclusion.reason} (on ${timeStr})`;
+              exclusionList.appendChild(li);
+            });
+          } else {
+            exclusionList.innerHTML = '<li>No exclusions recorded.</li>';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading student data:', error);
+          studentNameEl.textContent = 'Error loading student data.';
+          behaviourList.innerHTML = '';
+          isolationList.innerHTML = '';
+          exclusionList.innerHTML = '';
+        });
     }
-
-    const studentNameEl = document.getElementById('studentName');
-    const incidentsList = document.getElementById('incidentsList');
-    const isolationsList = document.getElementById('isolationsList');
-    const exclusionsList = document.getElementById('exclusionsList');
-
-    function renderList(listElement, dataArray, arrayName) {
-      listElement.innerHTML = '';
-
-      if (!dataArray || dataArray.length === 0) {
-        listElement.innerHTML = '<li class="text-gray-500">No entries</li>';
-        return;
-      }
-
-      dataArray.forEach((entry, index) => {
-        const li = document.createElement('li');
-        li.className = "flex justify-between items-start bg-gray-50 p-3 rounded";
-
-        const isObject = typeof entry === 'object' && entry !== null;
-        const text = entry?.text || entry?.reason || (typeof entry === 'string' ? entry : 'Unknown');
-        const date = isObject && entry.timestamp?.toDate ? entry.timestamp.toDate().toLocaleString() : '';
-
-        li.innerHTML = `
-          <div>
-            <p class="font-medium">${text}</p>
-            <p class="text-sm text-gray-500">${date || 'No date recorded'}</p>
-          </div>
-        `;
-        listElement.appendChild(li);
-      });
-    }
-
-    async function loadStudent() {
-      try {
-        const doc = await db.collection('students').doc(studentId).get();
-        if (!doc.exists) {
-          alert('Student not found.');
-          window.location.href = 'behaviourdatabase.html';
-        }
-
-        const data = doc.data();
-        studentNameEl.textContent = data.name || 'Unnamed Student';
-
-        renderList(incidentsList, data.behaviourIncidents, 'behaviourIncidents');
-        renderList(isolationsList, data.isolations, 'isolations');
-        renderList(exclusionsList, data.exclusions, 'exclusions');
-      } catch (error) {
-        console.error('Error loading student data:', error);
-        alert('Failed to load student data.');
-      }
-    }
-
-    loadStudent();
   </script>
 </body>
 </html>
