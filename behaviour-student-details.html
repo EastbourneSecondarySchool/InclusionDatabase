@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Behaviour Student Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-  <script>
+
+  <!-- Firebase SDK v9 modular -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
@@ -18,111 +21,108 @@
       measurementId: "G-54LQVPWPJH"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Return to Behaviour Database</button>
-    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading Student Details...</h1>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    <section>
-      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="list-disc pl-6 mb-6 text-gray-700">
-        <li>Loading...</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
-      <ul id="isolationList" class="list-disc pl-6 mb-6 text-gray-700">
-        <li>Loading...</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
-      <ul id="exclusionList" class="list-disc pl-6 mb-6 text-gray-700">
-        <li>Loading...</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2 class="text-xl font-semibold mb-2 text-red-600">Debug Info</h2>
-      <pre id="debugInfo" class="bg-gray-200 p-4 rounded overflow-x-auto max-h-64"></pre>
-    </section>
-  </div>
-
-  <script>
     const params = new URLSearchParams(window.location.search);
     const studentId = params.get('id');
 
-    if (!studentId) {
-      alert('No student ID provided.');
-      window.location.href = 'behaviourdatabase.html';
-    }
+    const studentNameEl = document.getElementById('studentName');
+    const behaviourList = document.getElementById('behaviourList');
+    const isolationList = document.getElementById('isolationList');
+    const exclusionList = document.getElementById('exclusionList');
+    const debugOutput = document.getElementById('debugInfo');
 
-    const debugInfoEl = document.getElementById('debugInfo');
-
-    async function loadStudentDetails() {
+    function formatDate(timestamp) {
       try {
-        const docRef = db.collection('students').doc(studentId);
-        const doc = await docRef.get();
-
-        if (!doc.exists) {
-          document.getElementById('studentName').textContent = 'Student not found';
-          ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
-            document.getElementById(id).innerHTML = '<li class="text-red-600">No data available.</li>';
-          });
-          debugInfoEl.textContent = 'Document does not exist.';
-          return;
-        }
-
-        const data = doc.data();
-        debugInfoEl.textContent = JSON.stringify(data, null, 2);
-
-        document.getElementById('studentName').textContent = data.name || 'Unnamed Student';
-
-        function formatDate(timestamp) {
-          if (!timestamp) return '';
-          if (timestamp.toDate) return timestamp.toDate().toLocaleString();
-          return new Date(timestamp).toLocaleString();
-        }
-
-        function renderList(containerId, items, textKey = 'text', reasonKey = 'reason') {
-          const container = document.getElementById(containerId);
-          container.innerHTML = '';
-
-          if (!Array.isArray(items) || items.length === 0) {
-            container.innerHTML = '<li>No entries found.</li>';
-            return;
-          }
-
-          items.forEach(item => {
-            let description = item[textKey] || item[reasonKey] || 'No description';
-            let timeStr = item.timestamp ? ` (on ${formatDate(item.timestamp)})` : '';
-            const li = document.createElement('li');
-            li.textContent = description + timeStr;
-            container.appendChild(li);
-          });
-        }
-
-        renderList('behaviourList', data.behaviourIncidents);
-        renderList('isolationList', data.isolations);
-        renderList('exclusionList', data.exclusions);
-
-      } catch (error) {
-        console.error('Error loading student details:', error);
-        document.getElementById('studentName').textContent = 'Error loading student details';
-        ['behaviourList', 'isolationList', 'exclusionList'].forEach(id => {
-          document.getElementById(id).innerHTML = '<li class="text-red-600">Failed to load data.</li>';
-        });
-        debugInfoEl.textContent = error.message || 'Unknown error';
+        if (!timestamp) return '';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+      } catch {
+        return '';
       }
     }
 
-    loadStudentDetails();
+    function populateList(listElement, items, label) {
+      listElement.innerHTML = "";
+      if (!Array.isArray(items) || items.length === 0) {
+        listElement.innerHTML = `<li class="text-gray-500">No ${label} found.</li>`;
+        return;
+      }
+
+      items.forEach((entry, i) => {
+        const li = document.createElement('li');
+        let reason = entry.reason || entry.text || "No reason provided";
+        let time = entry.timestamp ? ` (${formatDate(entry.timestamp)})` : "";
+        li.textContent = `${reason}${time}`;
+        listElement.appendChild(li);
+      });
+    }
+
+    async function fetchStudentData() {
+      if (!studentId) {
+        studentNameEl.textContent = "No student ID provided.";
+        return;
+      }
+
+      try {
+        const docRef = doc(db, "students", studentId);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          studentNameEl.textContent = "Student not found.";
+          debugOutput.textContent = "No document found for ID: " + studentId;
+          return;
+        }
+
+        const data = docSnap.data();
+        studentNameEl.textContent = data.name || "Unnamed Student";
+
+        populateList(behaviourList, data.behaviourIncidents || [], "behaviour incidents");
+        populateList(isolationList, data.isolations || [], "isolations");
+        populateList(exclusionList, data.exclusions || [], "exclusions");
+
+        debugOutput.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        studentNameEl.textContent = "Error loading student data.";
+        debugOutput.textContent = "Error: " + error.message;
+        console.error("Error fetching student:", error);
+      }
+    }
+
+    fetchStudentData();
   </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded p-6">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="text-blue-600 hover:underline mb-4">← Back to Behaviour Database</button>
+    <h1 id="studentName" class="text-3xl font-bold mb-6 text-center">Loading student...</h1>
+
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
+      <ul id="behaviourList" class="list-disc pl-6 text-gray-700 mb-6">
+        <li>Loading...</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
+      <ul id="isolationList" class="list-disc pl-6 text-gray-700 mb-6">
+        <li>Loading...</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
+      <ul id="exclusionList" class="list-disc pl-6 text-gray-700 mb-6">
+        <li>Loading...</li>
+      </ul>
+    </div>
+
+    <div class="mt-8">
+      <h2 class="text-red-600 font-semibold">Debug Info</h2>
+      <pre id="debugInfo" class="bg-gray-200 p-4 rounded text-sm overflow-auto max-h-64"></pre>
+    </div>
+  </div>
 </body>
 </html>
