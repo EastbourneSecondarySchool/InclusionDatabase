@@ -76,7 +76,7 @@
 
       try {
         // Query the staffUsers collection where username matches and isAdmin === "true"
-        const staffUsersCol = collection(db, 'staffUsers');
+        const staffUsersCol = collection(db, 'staff');
         const q = query(staffUsersCol,
           where('username', '==', username),
           where('isAdmin', '==', "true")
