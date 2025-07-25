@@ -168,7 +168,6 @@
 
 <div class="top-bar">
   <input type="text" id="searchBar" placeholder="Search by name..." />
-  <!-- Theme toggle button always visible here -->
   <button id="themeToggleBtn" onclick="toggleTheme()">Toggle Light/Dark</button>
 </div>
 
@@ -178,7 +177,6 @@
   <button class="tab-btn" data-tab="passwordTab">Password Notices</button>
 </div>
 
-<!-- Students Tab -->
 <div id="studentsTab">
   <table id="adminStudentTable">
     <thead>
@@ -195,7 +193,6 @@
   </table>
 </div>
 
-<!-- Staff Tab -->
 <div id="staffTab" class="hidden">
   <button onclick="showAddStaffModal()">Add Staff Member</button>
   <table id="staffTable" style="margin-top:10px;">
@@ -210,12 +207,9 @@
   </table>
 </div>
 
-<!-- Password Notices Tab -->
 <div id="passwordTab" class="hidden">
   <h2>Password Reset Requests</h2>
-  <div id="passwordRequestsContainer">
-    <!-- Requests will be loaded here -->
-  </div>
+  <div id="passwordRequestsContainer"></div>
   <p id="noRequestsMsg" style="text-align:center; color:#666;">No password reset requests.</p>
 </div>
 
@@ -223,7 +217,6 @@
 
 <div id="modalOverlay"></div>
 
-<!-- Edit Student Modal -->
 <div id="editModal">
   <h3>Edit Student</h3>
   <input type="text" id="editName" placeholder="Student Name" />
@@ -235,7 +228,6 @@
   <button onclick="closeEdit()">Cancel</button>
 </div>
 
-<!-- Add/Edit Staff Modal -->
 <div id="editStaffModal">
   <h3 id="staffModalTitle">Add Staff Member</h3>
   <input type="text" id="staffUsername" placeholder="Username" />
@@ -248,7 +240,6 @@
   <button onclick="closeStaffModal()">Cancel</button>
 </div>
 
-<!-- Reset Password Modal -->
 <div id="resetPassModal">
   <h3>Reset Password for <span id="resetUserSpan"></span></h3>
   <input type="password" id="newPasswordInput" placeholder="New Password" />
@@ -256,401 +247,341 @@
   <button onclick="closeResetPassModal()">Cancel</button>
 </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // Initialize Firebase
-    const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-    authDomain: "pastoraldatabase.firebaseapp.com",
-    projectId: "pastoraldatabase",
-    storageBucket: "pastoraldatabase.firebasestorage.app",
-    messagingSenderId: "859785843482",
-    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-    measurementId: "G-54LQVPWPJH"
+    authDomain: "ess-pastoral-database.firebaseapp.com",
+    projectId: "ess-pastoral-database",
+    storageBucket: "ess-pastoral-database.appspot.com",
+    messagingSenderId: "1010339363507",
+    appId: "1:1010339363507:web:04f0914ac6bc8033632db5"
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  // Global variables
-  let students = [];
-  let staffUsers = [];
-  let passwordRequests = [];
-  let currentEditIndex = null;
-  let currentStaffEditIndex = null;
-  let currentResetRequestIndex = null;
-  let sortOrderStudents = 1;
-  let sortOrderStaff = 1;
+  // Dark/Light theme toggle
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+  }
 
-  // DOM ready
-  document.addEventListener('DOMContentLoaded', async () => {
-    // Load theme
-    const theme = localStorage.getItem('theme');
-    if (theme === 'dark') document.body.classList.add('dark-mode');
-
-    // Load data from Firestore
-    await loadStudentsFromFirestore();
-    await loadStaffFromFirestore();
-    await loadPasswordRequestsFromFirestore();
-
-    loadStudents();
-    loadStaff();
-    loadPasswordRequests();
-
-    // Tab functionality
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const tab = btn.getAttribute('data-tab');
-        document.querySelectorAll('#studentsTab, #staffTab, #passwordTab').forEach(t => {
-          t.classList.add('hidden');
-        });
-        document.getElementById(tab).classList.remove('hidden');
+  // Tab navigation
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#studentsTab, #staffTab, #passwordTab').forEach(tab => {
+        tab.classList.add('hidden');
       });
-    });
-
-    // Search bar filtering
-    document.getElementById('searchBar').addEventListener('input', e => {
-      const filter = e.target.value.toLowerCase();
-      filterStudents(filter);
+      document.getElementById(btn.dataset.tab).classList.remove('hidden');
     });
   });
 
-  // THEME TOGGLE
-  function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-    if (document.body.classList.contains('dark-mode')) {
-      localStorage.setItem('theme', 'dark');
-    } else {
-      localStorage.setItem('theme', 'light');
-    }
-  }
-
-  // LOAD STUDENTS
-  async function loadStudentsFromFirestore() {
+  // Fetch and display students
+  let studentsData = [];
+  async function fetchStudents() {
     const snapshot = await db.collection('students').get();
-    students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    studentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    displayStudents(studentsData);
   }
-
-  function loadStudents() {
+  function displayStudents(data) {
     const tbody = document.querySelector('#adminStudentTable tbody');
     tbody.innerHTML = '';
-    students.forEach((student, index) => {
+    data.forEach(student => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(student.name)}</td>
-        <td>${escapeHtml(student.robloxUser)}</td>
-        <td>${escapeHtml(student.discordUser)}</td>
-        <td>${student.timeoutPass ? '✔️' : ''}</td>
-        <td>${escapeHtml(student.notes)}</td>
+        <td>${student.Name || ''}</td>
+        <td>${student.RobloxUser || ''}</td>
+        <td>${student.DiscordUser || ''}</td>
+        <td>${student.TimeoutPass ? 'Yes' : 'No'}</td>
+        <td>${student.Notes || ''}</td>
         <td>
-          <button onclick="editStudent(${index})">Edit</button>
-          <button class="remove-btn" onclick="removeStudent(${index})">Remove</button>
+          <button onclick="editStudent('${student.id}')">Edit</button>
+          <button class="remove-btn" onclick="removeStudent('${student.id}')">Remove</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
-  // EDIT STUDENT
-  function editStudent(index) {
-    currentEditIndex = index;
-    const s = students[index];
-    document.getElementById('editName').value = s.name;
-    document.getElementById('editRoblox').value = s.robloxUser;
-    document.getElementById('editDiscord').value = s.discordUser;
-    document.getElementById('editTimeout').checked = !!s.timeoutPass;
-    document.getElementById('editNotes').value = s.notes || '';
-    showModal('editModal');
+  // Search filter for students
+  document.getElementById('searchBar').addEventListener('input', e => {
+    const term = e.target.value.toLowerCase();
+    const filtered = studentsData.filter(s => s.Name && s.Name.toLowerCase().includes(term));
+    displayStudents(filtered);
+  });
+
+  // Sorting tables
+  function sortTable(tableType, colIndex) {
+    let dataArray;
+    if (tableType === 'students') {
+      dataArray = [...studentsData];
+    } else if (tableType === 'staff') {
+      dataArray = [...staffData];
+    } else {
+      return;
+    }
+    const header = (tableType === 'students' ? document.querySelectorAll('#adminStudentTable th') : document.querySelectorAll('#staffTable th'))[colIndex];
+    const asc = !header.classList.contains('asc');
+    header.classList.toggle('asc', asc);
+    header.classList.toggle('desc', !asc);
+    dataArray.sort((a,b) => {
+      let valA, valB;
+      if (tableType === 'students') {
+        switch(colIndex) {
+          case 0: valA = a.Name || ''; valB = b.Name || ''; break;
+          case 1: valA = a.RobloxUser || ''; valB = b.RobloxUser || ''; break;
+          case 2: valA = a.DiscordUser || ''; valB = b.DiscordUser || ''; break;
+          case 3: valA = a.TimeoutPass ? 'Yes' : 'No'; valB = b.TimeoutPass ? 'Yes' : 'No'; break;
+          default: valA = ''; valB = '';
+        }
+      } else {
+        if(colIndex === 0){
+          valA = a.Username || '';
+          valB = b.Username || '';
+        } else if(colIndex === 1){
+          valA = a.Role || '';
+          valB = b.Role || '';
+        }
+      }
+      valA = valA.toString().toLowerCase();
+      valB = valB.toString().toLowerCase();
+      if (valA < valB) return asc ? -1 : 1;
+      if (valA > valB) return asc ? 1 : -1;
+      return 0;
+    });
+    if (tableType === 'students') {
+      displayStudents(dataArray);
+      studentsData = dataArray;
+    } else {
+      displayStaff(dataArray);
+      staffData = dataArray;
+    }
   }
 
-  async function saveEdit() {
+  // Edit student modal
+  let currentEditId = null;
+  function editStudent(id) {
+    currentEditId = id;
+    const student = studentsData.find(s => s.id === id);
+    if (!student) return alert('Student not found');
+    document.getElementById('editName').value = student.Name || '';
+    document.getElementById('editRoblox').value = student.RobloxUser || '';
+    document.getElementById('editDiscord').value = student.DiscordUser || '';
+    document.getElementById('editTimeout').checked = !!student.TimeoutPass;
+    document.getElementById('editNotes').value = student.Notes || '';
+    openModal('editModal');
+  }
+  function saveEdit() {
     const name = document.getElementById('editName').value.trim();
-    const robloxUser = document.getElementById('editRoblox').value.trim();
-    const discordUser = document.getElementById('editDiscord').value.trim();
+    if (!name) return alert('Name cannot be empty');
+    const roblox = document.getElementById('editRoblox').value.trim();
+    const discord = document.getElementById('editDiscord').value.trim();
     const timeoutPass = document.getElementById('editTimeout').checked;
     const notes = document.getElementById('editNotes').value.trim();
 
-    if (!name) {
-      alert('Name cannot be empty.');
-      return;
-    }
-
-    const student = students[currentEditIndex];
-    const id = student.id;
-
-    try {
-      await db.collection('students').doc(id).update({
-        name, robloxUser, discordUser, timeoutPass, notes
-      });
-      students[currentEditIndex] = { id, name, robloxUser, discordUser, timeoutPass, notes };
-      loadStudents();
+    db.collection('students').doc(currentEditId).update({
+      Name: name,
+      RobloxUser: roblox,
+      DiscordUser: discord,
+      TimeoutPass: timeoutPass,
+      Notes: notes
+    }).then(() => {
+      fetchStudents();
       closeEdit();
-    } catch (error) {
-      alert('Error updating student: ' + error.message);
-    }
+    }).catch(err => alert('Error updating student: ' + err.message));
   }
-
   function closeEdit() {
-    hideModal('editModal');
+    closeModal('editModal');
+    currentEditId = null;
   }
 
-  // REMOVE STUDENT
-  async function removeStudent(index) {
-    if (!confirm('Are you sure you want to remove this student?')) return;
-    const student = students[index];
-    try {
-      await db.collection('students').doc(student.id).delete();
-      students.splice(index, 1);
-      loadStudents();
-    } catch (error) {
-      alert('Error removing student: ' + error.message);
+  function openModal(id) {
+    document.getElementById('modalOverlay').style.display = 'block';
+    document.getElementById(id).style.display = 'block';
+  }
+  function closeModal(id) {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.getElementById(id).style.display = 'none';
+  }
+  document.getElementById('modalOverlay').addEventListener('click', () => {
+    ['editModal', 'editStaffModal', 'resetPassModal'].forEach(closeModal);
+  });
+
+  // Remove student
+  function removeStudent(id) {
+    if(confirm('Are you sure you want to remove this student?')){
+      db.collection('students').doc(id).delete()
+      .then(() => fetchStudents())
+      .catch(err => alert('Failed to remove student: ' + err.message));
     }
-  }
-
-  // SORT TABLE
-  function sortTable(type, colIndex) {
-    if (type === 'students') {
-      sortOrderStudents *= -1;
-      students.sort((a, b) => {
-        let valA, valB;
-        switch (colIndex) {
-          case 0: valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); break;
-          case 1: valA = a.robloxUser.toLowerCase(); valB = b.robloxUser.toLowerCase(); break;
-          case 2: valA = a.discordUser.toLowerCase(); valB = b.discordUser.toLowerCase(); break;
-          case 3: valA = a.timeoutPass ? 1 : 0; valB = b.timeoutPass ? 1 : 0; break;
-          default: valA = ''; valB = '';
-        }
-        if (valA < valB) return -1 * sortOrderStudents;
-        if (valA > valB) return 1 * sortOrderStudents;
-        return 0;
-      });
-      loadStudents();
-    } else if (type === 'staff') {
-      sortOrderStaff *= -1;
-      staffUsers.sort((a, b) => {
-        let valA, valB;
-        switch (colIndex) {
-          case 0: valA = a.username.toLowerCase(); valB = b.username.toLowerCase(); break;
-          case 1: valA = a.role.toLowerCase(); valB = b.role.toLowerCase(); break;
-          default: valA = ''; valB = '';
-        }
-        if (valA < valB) return -1 * sortOrderStaff;
-        if (valA > valB) return 1 * sortOrderStaff;
-        return 0;
-      });
-      loadStaff();
-    }
-  }
-
-  // FILTER STUDENTS BY NAME
-  function filterStudents(filter) {
-    const tbody = document.querySelector('#adminStudentTable tbody');
-    tbody.innerHTML = '';
-    students.forEach((student, index) => {
-      if (student.name.toLowerCase().includes(filter)) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(student.name)}</td>
-          <td>${escapeHtml(student.robloxUser)}</td>
-          <td>${escapeHtml(student.discordUser)}</td>
-          <td>${student.timeoutPass ? '✔️' : ''}</td>
-          <td>${escapeHtml(student.notes)}</td>
-          <td>
-            <button onclick="editStudent(${index})">Edit</button>
-            <button class="remove-btn" onclick="removeStudent(${index})">Remove</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
-    });
   }
 
   // STAFF MANAGEMENT
-  async function loadStaffFromFirestore() {
+  let staffData = [];
+  async function fetchStaff() {
     const snapshot = await db.collection('staff').get();
-    staffUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    staffData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    displayStaff(staffData);
   }
-
-  function loadStaff() {
+  function displayStaff(data) {
     const tbody = document.querySelector('#staffTable tbody');
     tbody.innerHTML = '';
-    staffUsers.forEach((user, index) => {
+    data.forEach(staff => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(user.username)}</td>
-        <td>${escapeHtml(user.role)}</td>
+        <td>${staff.Username || ''}</td>
+        <td>${staff.Role || ''}</td>
         <td>
-          <button onclick="editStaff(${index})">Edit</button>
-          <button class="remove-btn" onclick="removeStaff(${index})">Remove</button>
-          <button onclick="showResetPassModal(${index})">Reset Password</button>
+          <button onclick="editStaff('${staff.id}')">Edit</button>
+          <button class="remove-btn" onclick="removeStaff('${staff.id}')">Remove</button>
+          <button onclick="openResetPassModal('${staff.id}', '${staff.Username}')">Reset Password</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
   }
 
+  let currentStaffId = null;
   function showAddStaffModal() {
-    currentStaffEditIndex = null;
+    currentStaffId = null;
     document.getElementById('staffModalTitle').textContent = 'Add Staff Member';
     document.getElementById('staffUsername').value = '';
     document.getElementById('staffPassword').value = '';
     document.getElementById('staffRole').value = 'staff';
-    showModal('editStaffModal');
+    openModal('editStaffModal');
   }
-
-  function editStaff(index) {
-    currentStaffEditIndex = index;
-    const user = staffUsers[index];
+  function editStaff(id) {
+    currentStaffId = id;
+    const staff = staffData.find(s => s.id === id);
+    if(!staff) return alert('Staff member not found');
     document.getElementById('staffModalTitle').textContent = 'Edit Staff Member';
-    document.getElementById('staffUsername').value = user.username;
-    document.getElementById('staffPassword').value = '';
-    document.getElementById('staffRole').value = user.role;
-    showModal('editStaffModal');
+    document.getElementById('staffUsername').value = staff.Username || '';
+    document.getElementById('staffPassword').value = ''; // Leave blank for no change
+    document.getElementById('staffRole').value = staff.Role || 'staff';
+    openModal('editStaffModal');
   }
-
-  async function saveStaff() {
+  function saveStaff() {
     const username = document.getElementById('staffUsername').value.trim();
     const password = document.getElementById('staffPassword').value;
     const role = document.getElementById('staffRole').value;
 
-    if (!username) {
-      alert('Username cannot be empty.');
-      return;
-    }
+    if (!username) return alert('Username cannot be empty');
+    if (!currentStaffId && !password) return alert('Password is required for new staff');
 
-    if (currentStaffEditIndex === null && !password) {
-      alert('Password is required for new staff.');
-      return;
-    }
-
-    try {
-      if (currentStaffEditIndex === null) {
-        // Add new staff - Password should be hashed in real apps!
-        const docRef = await db.collection('staff').add({ username, password, role });
-        staffUsers.push({ id: docRef.id, username, password, role });
-      } else {
-        // Update existing (only username and role, password can be reset separately)
-        const staff = staffUsers[currentStaffEditIndex];
-        await db.collection('staff').doc(staff.id).update({ username, role });
-        staffUsers[currentStaffEditIndex].username = username;
-        staffUsers[currentStaffEditIndex].role = role;
-      }
-      loadStaff();
-      closeStaffModal();
-    } catch (error) {
-      alert('Error saving staff: ' + error.message);
+    if (currentStaffId) {
+      // Update existing
+      let updateData = { Username: username, Role: role };
+      if (password) updateData.Password = password; // For simplicity, store password directly (consider hashing in real use)
+      db.collection('staff').doc(currentStaffId).update(updateData)
+      .then(() => {
+        fetchStaff();
+        closeStaffModal();
+      }).catch(err => alert('Failed to update staff: ' + err.message));
+    } else {
+      // Add new
+      db.collection('staff').add({ Username: username, Password: password, Role: role })
+      .then(() => {
+        fetchStaff();
+        closeStaffModal();
+      }).catch(err => alert('Failed to add staff: ' + err.message));
     }
   }
-
-  async function removeStaff(index) {
-    if (!confirm('Are you sure you want to remove this staff member?')) return;
-    const user = staffUsers[index];
-    try {
-      await db.collection('staff').doc(user.id).delete();
-      staffUsers.splice(index, 1);
-      loadStaff();
-    } catch (error) {
-      alert('Error removing staff: ' + error.message);
-    }
-  }
-
   function closeStaffModal() {
-    hideModal('editStaffModal');
+    closeModal('editStaffModal');
+    currentStaffId = null;
+  }
+  function removeStaff(id) {
+    if(confirm('Are you sure you want to remove this staff member?')){
+      db.collection('staff').doc(id).delete()
+      .then(() => fetchStaff())
+      .catch(err => alert('Failed to remove staff: ' + err.message));
+    }
   }
 
-  // PASSWORD RESET REQUESTS MANAGEMENT
-  async function loadPasswordRequestsFromFirestore() {
+  // PASSWORD RESET REQUESTS
+  async function fetchPasswordRequests() {
     const snapshot = await db.collection('passwordResetRequests').get();
-    passwordRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  function loadPasswordRequests() {
+    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const container = document.getElementById('passwordRequestsContainer');
-    container.innerHTML = '';
-    if (passwordRequests.length === 0) {
-      document.getElementById('noRequestsMsg').style.display = 'block';
+    const noReqMsg = document.getElementById('noRequestsMsg');
+
+    if (requests.length === 0) {
+      noReqMsg.style.display = 'block';
+      container.innerHTML = '';
       return;
     }
-    document.getElementById('noRequestsMsg').style.display = 'none';
-
-    passwordRequests.forEach((req, i) => {
+    noReqMsg.style.display = 'none';
+    container.innerHTML = '';
+    requests.forEach(req => {
       const div = document.createElement('div');
       div.className = 'request-item';
-      div.textContent = `User: ${req.username} - Requested on: ${new Date(req.timestamp).toLocaleString()}`;
-      div.onclick = () => showResetPassModal(i);
+      div.textContent = `Username: ${req.Username || 'N/A'}`;
+      div.onclick = () => openResetPassModal(req.id, req.Username);
       container.appendChild(div);
     });
   }
 
-  // RESET PASSWORD MODAL
-  function showResetPassModal(index) {
-    currentResetRequestIndex = index;
-    const req = passwordRequests[index];
-    document.getElementById('resetUserSpan').textContent = req.username;
+  // Reset password modal
+  let resetUserId = null;
+  function openResetPassModal(id, username) {
+    resetUserId = id;
+    document.getElementById('resetUserSpan').textContent = username || '';
     document.getElementById('newPasswordInput').value = '';
-    showModal('resetPassModal');
+    openModal('resetPassModal');
   }
+  function confirmResetPassword() {
+    const newPass = document.getElementById('newPasswordInput').value.trim();
+    if (!newPass) return alert('Please enter a new password.');
 
-  async function confirmResetPassword() {
-    const newPass = document.getElementById('newPasswordInput').value;
-    if (!newPass) {
-      alert('New password cannot be empty.');
-      return;
-    }
-    const req = passwordRequests[currentResetRequestIndex];
-    const username = req.username;
-    try {
-      // Update staff password
-      const snapshot = await db.collection('staff').where('username', '==', username).get();
-      if (snapshot.empty) {
-        alert('Staff user not found.');
-        return;
-      }
-      const docId = snapshot.docs[0].id;
-      await db.collection('staff').doc(docId).update({ password: newPass });
-      // Remove request
-      await db.collection('passwordResetRequests').doc(req.id).delete();
-      passwordRequests.splice(currentResetRequestIndex, 1);
-      loadPasswordRequests();
-      closeResetPassModal();
-      alert('Password reset successfully.');
-    } catch (error) {
-      alert('Error resetting password: ' + error.message);
-    }
+    // Check if resetUserId is a staff ID or a password reset request ID
+    // For staff, reset password in staff collection
+    // For password reset requests, assume resetUserId is a request ID, find username and update staff password, then remove request
+    db.collection('staff').doc(resetUserId).get()
+      .then(doc => {
+        if (doc.exists) {
+          // Reset staff password directly
+          return db.collection('staff').doc(resetUserId).update({ Password: newPass });
+        } else {
+          // It's a request ID; find request document to get username, then update staff password by username
+          return db.collection('passwordResetRequests').doc(resetUserId).get()
+            .then(reqDoc => {
+              if (!reqDoc.exists) throw new Error('Password reset request not found');
+              const username = reqDoc.data().Username;
+              return db.collection('staff').where('Username', '==', username).get()
+                .then(staffSnap => {
+                  if (staffSnap.empty) throw new Error('Staff member not found');
+                  const batch = db.batch();
+                  staffSnap.forEach(docStaff => {
+                    batch.update(docStaff.ref, { Password: newPass });
+                  });
+                  batch.delete(db.collection('passwordResetRequests').doc(resetUserId));
+                  return batch.commit();
+                });
+            });
+        }
+      })
+      .then(() => {
+        alert('Password reset successful.');
+        fetchPasswordRequests();
+        fetchStaff();
+        closeResetPassModal();
+      })
+      .catch(err => alert('Error resetting password: ' + err.message));
   }
-
   function closeResetPassModal() {
-    hideModal('resetPassModal');
+    closeModal('resetPassModal');
+    resetUserId = null;
   }
 
-  // MODAL UTILS
-  function showModal(id) {
-    document.getElementById(id).style.display = 'block';
-    document.getElementById('modalOverlay').style.display = 'block';
-  }
-
-  function hideModal(id) {
-    document.getElementById(id).style.display = 'none';
-    document.getElementById('modalOverlay').style.display = 'none';
-  }
-
-  // Escape HTML to prevent XSS
-  function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/[&<>"']/g, function(m) {
-      return ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      })[m];
-    });
-  }
+  // Initial fetch
+  fetchStudents();
+  fetchStaff();
+  fetchPasswordRequests();
 </script>
+
 </body>
 </html>
