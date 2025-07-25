@@ -9,11 +9,25 @@
     .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #444; border-bottom: none; background-color: #eee; margin-right: 5px; }
     .tab-btn.active { background-color: white; font-weight: bold; }
     .tab-content { border: 1px solid #444; padding: 15px; margin-top: -1px; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; padding: 20px; width: 300px; border-radius: 5px; position: relative; }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      width: 300px;
+      border-radius: 5px;
+      position: relative;
+    }
     .modal-content h3 { margin-top: 0; }
     .modal-content label { display: block; margin-top: 10px; }
     .modal-content input, .modal-content select { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
@@ -98,7 +112,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Tabs logic
+    // Tab logic
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = {
       studentsTab: document.getElementById('studentsTab'),
@@ -125,16 +139,8 @@
     const staffRoleSelect = document.getElementById('staffRole');
     const staffModalTitle = document.getElementById('staffModalTitle');
 
-    const openModal = () => {
-      editStaffModal.classList.remove('hidden');
-      staffUsernameInput.focus();
-    };
-    const closeModal = () => {
-      editStaffModal.classList.add('hidden');
-      staffUsernameInput.value = '';
-      staffPasswordInput.value = '';
-      staffRoleSelect.value = 'staff';
-    };
+    const openModal = () => editStaffModal.classList.remove('hidden');
+    const closeModal = () => editStaffModal.classList.add('hidden');
 
     // Load Students
     function loadStudents() {
@@ -208,6 +214,9 @@
     // Add Staff button opens modal
     document.getElementById('addStaffBtn').addEventListener('click', () => {
       staffModalTitle.textContent = 'Add Staff Member';
+      staffUsernameInput.value = '';
+      staffPasswordInput.value = '';
+      staffRoleSelect.value = 'staff';
       openModal();
     });
 
