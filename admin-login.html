@@ -18,23 +18,18 @@
       color: white; font-weight: bold; cursor: pointer; border-radius: 4px;
     }
     button:disabled { background: #ccc; cursor: default; }
-    .forgot-btn {
-      margin-top: 10px; background: none; border: none; color: #007bff; cursor: pointer;
-      text-decoration: underline; font-size: 0.9em; padding: 0;
-    }
     .error { color: red; margin-top: 15px; }
   </style>
 </head>
 <body>
   <div class="login-container">
     <h2>Admin Panel Login</h2>
-    <form id="loginForm">
+    <form id="adminLoginForm">
       <label for="username">Username:</label>
       <input type="text" id="username" autocomplete="username" required />
       <label for="password">Password:</label>
       <input type="password" id="password" autocomplete="current-password" required />
       <button type="submit" id="loginBtn">Login</button>
-      <button type="button" class="forgot-btn" id="forgotPasswordBtn">Forgot Password?</button>
     </form>
     <div class="error" id="errorMsg"></div>
   </div>
@@ -46,8 +41,7 @@
       collection,
       query,
       where,
-      getDocs,
-      addDoc
+      getDocs
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -63,13 +57,12 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const loginForm = document.getElementById('loginForm');
+    const adminLoginForm = document.getElementById('adminLoginForm');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const errorMsg = document.getElementById('errorMsg');
-    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
-    loginForm.addEventListener('submit', async e => {
+    adminLoginForm.addEventListener('submit', async e => {
       e.preventDefault();
       errorMsg.textContent = '';
 
@@ -82,60 +75,37 @@
       }
 
       try {
-        const staffCol = collection(db, 'staff');
-        const q = query(staffCol, where('username', '==', username));
-        const staffSnap = await getDocs(q);
+        // Query the staffUsers collection where username matches and isAdmin === "true"
+        const staffUsersCol = collection(db, 'staffUsers');
+        const q = query(staffUsersCol,
+          where('username', '==', username),
+          where('isAdmin', '==', "true")
+        );
+        const querySnapshot = await getDocs(q);
 
-        if (staffSnap.empty) {
+        if (querySnapshot.empty) {
           errorMsg.textContent = 'Invalid username or password.';
           return;
         }
 
-        let matched = false;
-        let role = null;
-
-        staffSnap.forEach(doc => {
+        let authenticated = false;
+        querySnapshot.forEach(doc => {
           const data = doc.data();
           if (data.password === password) {
-            matched = true;
-            role = data.role || 'staff'; // default to 'staff' if no role field
+            authenticated = true;
           }
         });
 
-        if (!matched) {
+        if (authenticated) {
+          localStorage.setItem('loggedInUser', username);
+          localStorage.setItem('isAdmin', 'true');
+          alert(`Welcome, Admin ${username}!`);
+          window.location.href = 'admin-panel.html'; // Change this to your admin panel URL
+        } else {
           errorMsg.textContent = 'Invalid username or password.';
-          return;
         }
-
-        if (role !== 'admin') {
-          errorMsg.textContent = 'Access denied: Admins only.';
-          return;
-        }
-
-        alert(`Welcome, Admin ${username}!`);
-        // Redirect to admin panel homepage (adjust URL as needed)
-        window.location.href = "admin.html";
       } catch (error) {
         errorMsg.textContent = 'Error logging in: ' + error.message;
-      }
-    });
-
-    forgotPasswordBtn.addEventListener('click', async () => {
-      errorMsg.textContent = '';
-      const username = usernameInput.value.trim();
-      if (!username) {
-        errorMsg.textContent = 'Enter your username to reset password.';
-        return;
-      }
-      try {
-        const noticesCol = collection(db, 'passwordNotices');
-        await addDoc(noticesCol, {
-          username,
-          requestedAt: new Date().toISOString()
-        });
-        alert('Password reset request sent. Admin will contact you.');
-      } catch (error) {
-        errorMsg.textContent = 'Error sending reset request: ' + error.message;
       }
     });
   </script>
