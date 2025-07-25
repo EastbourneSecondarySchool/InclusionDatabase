@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Behaviour Database</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-
-  <!-- Firebase v8 scripts for compatibility -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
   <script>
+    // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
@@ -57,7 +56,7 @@
     const studentsTbody = document.getElementById('studentsTbody');
     const searchInput = document.getElementById('searchInput');
 
-    // Redirect if not logged in
+    // Check auth on page load
     if (!localStorage.getItem('role')) {
       window.location.href = 'login.html';
     }
@@ -147,19 +146,27 @@
 
     function fetchStudents() {
       studentsTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Loading students...</td></tr>';
+
       db.collection('students').orderBy('name').get()
         .then(snapshot => {
+          console.log('Firestore snapshot received:', snapshot);
+
           studentsTbody.innerHTML = '';
+
           if (snapshot.empty) {
+            console.log('No students found');
             studentsTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">No students found.</td></tr>';
             return;
           }
+
           snapshot.forEach(doc => {
+            console.log('Student doc:', doc.id, doc.data());
             renderStudentRow(doc);
           });
         })
         .catch(error => {
           console.error('Error fetching students:', error);
+          alert('Error fetching students: ' + error.message);
           studentsTbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-600">Failed to load students.</td></tr>`;
         });
     }
