@@ -21,96 +21,103 @@
   <button id="forgotPasswordBtn" type="button" style="margin-top: 10px;">Forgot Password?</button>
   <div class="message" id="message"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-      authDomain: "pastoraldatabase.firebaseapp.com",
-      databaseURL: "https://pastoraldatabase-default-rtdb.firebaseio.com/",
-      projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.firebasestorage.app",
-      messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
+    authDomain: "pastoraldatabase.firebaseapp.com",
+    databaseURL: "https://pastoraldatabase-default-rtdb.firebaseio.com/",
+    projectId: "pastoraldatabase",
+    storageBucket: "pastoraldatabase.firebasestorage.app",
+    messagingSenderId: "859785843482",
+    appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+    measurementId: "G-54LQVPWPJH"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    const loginForm = document.getElementById('loginForm');
-    const messageDiv = document.getElementById('message');
-    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+  const loginForm = document.getElementById('loginForm');
+  const messageDiv = document.getElementById('message');
+  const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      messageDiv.style.color = 'red';
-      messageDiv.textContent = '';
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    messageDiv.style.color = 'red';
+    messageDiv.textContent = '';
 
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
 
-      if (!username || !password) {
-        messageDiv.textContent = 'Please enter username and password.';
+    console.log("Attempting login for:", username);
+
+    if (!username || !password) {
+      messageDiv.textContent = 'Please enter username and password.';
+      console.log("Username or password missing");
+      return;
+    }
+
+    try {
+      const staffRef = ref(db, 'staff');
+      const snapshot = await get(staffRef);
+      console.log("Staff data snapshot:", snapshot.val());
+
+      if (!snapshot.exists()) {
+        messageDiv.textContent = 'No staff users found.';
+        console.log("No staff users found in database");
         return;
       }
 
-      try {
-        const staffRef = ref(db, 'staff');
-        const snapshot = await get(staffRef);
+      const staffData = snapshot.val();
+      let foundUser = null;
 
-        if (!snapshot.exists()) {
-          messageDiv.textContent = 'No staff users found.';
-          return;
+      for (const id in staffData) {
+        const user = staffData[id];
+        if (user.username === username && user.password === password) {
+          foundUser = { id, ...user };
+          break;
         }
-
-        const staffData = snapshot.val();
-        let foundUser = null;
-
-        for (const id in staffData) {
-          const user = staffData[id];
-          if (user.username === username && user.password === password) {
-            foundUser = { id, ...user };
-            break;
-          }
-        }
-
-        if (foundUser) {
-          sessionStorage.setItem('loggedInUser', JSON.stringify({
-            id: foundUser.id,
-            username: foundUser.username,
-            isAdmin: foundUser.role === 'admin'
-          }));
-
-          messageDiv.style.color = 'green';
-          messageDiv.textContent = 'Login successful! Redirecting...';
-
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1000);
-        } else {
-          messageDiv.textContent = 'Invalid username or password.';
-        }
-      } catch (error) {
-        console.error('Login error:', error);
-        messageDiv.textContent = 'Login failed. Please try again.';
       }
-    });
 
-    forgotPasswordBtn.addEventListener('click', async () => {
-      const username = prompt("Enter your username:");
-      if (!username) return;
+      if (foundUser) {
+        sessionStorage.setItem('loggedInUser', JSON.stringify({
+          id: foundUser.id,
+          username: foundUser.username,
+          isAdmin: foundUser.role === 'admin'
+        }));
 
-      try {
-        const noticesRef = ref(db, 'passwordNotices');
-        await push(noticesRef, { username: username.trim() });
-        alert('Password reset request sent to admin.');
-      } catch (error) {
-        console.error('Forgot password error:', error);
-        alert('Failed to send password reset request.');
+        messageDiv.style.color = 'green';
+        messageDiv.textContent = 'Login successful! Redirecting...';
+        console.log("Login successful for user:", foundUser.username);
+
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1000);
+      } else {
+        messageDiv.textContent = 'Invalid username or password.';
+        console.log("Invalid username or password.");
       }
-    });
-  </script>
+    } catch (error) {
+      console.error('Login error:', error);
+      messageDiv.textContent = 'Login failed. Please try again.';
+    }
+  });
+
+  forgotPasswordBtn.addEventListener('click', async () => {
+    const username = prompt("Enter your username:");
+    if (!username) return;
+
+    try {
+      const noticesRef = ref(db, 'passwordNotices');
+      await push(noticesRef, { username: username.trim() });
+      alert('Password reset request sent to admin.');
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      alert('Failed to send password reset request.');
+    }
+  });
+</script>
 </body>
 </html>
