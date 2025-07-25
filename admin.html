@@ -1,586 +1,294 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Panel - ESS Pastoral Database</title>
-  <style>
-    :root {
-      --bg-color: #ffffff;
-      --text-color: #000000;
-      --table-border: #ccc;
-      --header-bg: #f0f0f0;
-      --btn-bg: #0066cc;
-      --btn-danger: #cc3300;
-      --btn-text: #ffffff;
-    }
-    body.dark-mode {
-      --bg-color: #1c1c1c;
-      --text-color: #eaeaea;
-      --table-border: #444;
-      --header-bg: #2a2a2a;
-      --btn-bg: #004c99;
-      --btn-danger: #aa0000;
-      --btn-text: #ffffff;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      max-width: 960px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    #searchBar {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      box-sizing: border-box;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid var(--table-border);
-      padding: 8px;
-      text-align: left;
-      cursor: default;
-    }
-    th.sortable:hover {
-      background-color: var(--header-bg);
-      cursor: pointer;
-    }
-    button {
-      padding: 6px 10px;
-      margin-right: 5px;
-      background-color: var(--btn-bg);
-      color: var(--btn-text);
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button.remove-btn {
-      background-color: var(--btn-danger);
-    }
-    #returnBtn {
-      display: block;
-      margin: 30px auto 0 auto;
-      width: 150px;
-      background-color: #444;
-      padding: 10px;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      text-align: center;
-    }
-    #editModal, #editStaffModal, #resetPassModal {
-      display: none;
-      position: fixed;
-      top: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-color);
-      border: 2px solid var(--table-border);
-      padding: 20px;
-      z-index: 1000;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      color: var(--text-color);
-    }
-    #modalOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.5);
-      z-index: 999;
-    }
-    input, textarea, select {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      background: transparent;
-      color: var(--text-color);
-      border: 1px solid var(--table-border);
-      box-sizing: border-box;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      cursor: pointer;
-      background: var(--btn-bg);
-      color: var(--btn-text);
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    .tab-btn.active {
-      background: #004c99;
-    }
-    .hidden {
-      display: none;
-    }
-    .request-item {
-      background: #f2f2f2;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 8px;
-      cursor: pointer;
-    }
-    .request-item:hover {
-      background: #ddd;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Panel with Firebase</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: 1px solid #444;
+    border-bottom: none;
+    background-color: #eee;
+    margin-right: 5px;
+  }
+  .tab-btn.active {
+    background-color: white;
+    font-weight: bold;
+  }
+  .tab-content {
+    border: 1px solid #444;
+    padding: 15px;
+    margin-top: -1px;
+  }
+  .hidden {
+    display: none;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #aaa;
+    padding: 8px;
+    text-align: left;
+  }
+  .modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: white;
+    padding: 20px;
+    width: 300px;
+    border-radius: 5px;
+    position: relative;
+  }
+  .modal-content h3 {
+    margin-top: 0;
+  }
+  .modal-content label {
+    display: block;
+    margin-top: 10px;
+  }
+  .modal-content input, .modal-content select {
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    box-sizing: border-box;
+  }
+  .modal-buttons {
+    margin-top: 15px;
+    text-align: right;
+  }
+  .modal-buttons button {
+    margin-left: 10px;
+    padding: 6px 12px;
+  }
+</style>
 </head>
 <body>
 
-<script>
-  const loggedUser = sessionStorage.getItem('loggedInUser');
-  const isAdmin = sessionStorage.getItem('isAdmin');
-  if (!loggedUser || isAdmin !== 'true') {
-    window.location.href = 'admin-login.html';
-  }
-</script>
+<h1>Admin Panel</h1>
 
-<h1>Admin Panel - ESS Pastoral Database</h1>
+<button class="tab-btn active" data-tab="studentsTab">Students</button>
+<button class="tab-btn" data-tab="staffTab">Staff</button>
 
-<div class="top-bar">
-  <input type="text" id="searchBar" placeholder="Search by name..." />
-  <button id="themeToggleBtn" onclick="toggleTheme()">Toggle Light/Dark</button>
-</div>
-
-<div class="tabs">
-  <button class="tab-btn active" data-tab="studentsTab">Students</button>
-  <button class="tab-btn" data-tab="staffTab">Staff</button>
-  <button class="tab-btn" data-tab="passwordTab">Password Notices</button>
-</div>
-
-<div id="studentsTab">
-  <table id="adminStudentTable">
+<div id="studentsTab" class="tab-content">
+  <h2>Students</h2>
+  <table id="studentsTable">
     <thead>
       <tr>
-        <th class="sortable" onclick="sortTable('students',0)">Name</th>
-        <th class="sortable" onclick="sortTable('students',1)">Roblox User</th>
-        <th class="sortable" onclick="sortTable('students',2)">Discord User</th>
-        <th class="sortable" onclick="sortTable('students',3)">Timeout Pass</th>
-        <th>Notes</th>
-        <th>Actions</th>
+        <th>ID</th><th>Name</th><th>Email</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </div>
 
-<div id="staffTab" class="hidden">
-  <button onclick="showAddStaffModal()">Add Staff Member</button>
-  <table id="staffTable" style="margin-top:10px;">
+<div id="staffTab" class="tab-content hidden">
+  <h2>Staff Members</h2>
+  <button id="addStaffBtn">Add Staff Member</button>
+  <table id="staffTable">
     <thead>
       <tr>
-        <th class="sortable" onclick="sortTable('staff',0)">Username</th>
-        <th class="sortable" onclick="sortTable('staff',1)">Role</th>
-        <th>Actions</th>
+        <th>ID</th><th>Username</th><th>Role</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </div>
 
-<div id="passwordTab" class="hidden">
-  <h2>Password Reset Requests</h2>
-  <div id="passwordRequestsContainer"></div>
-  <p id="noRequestsMsg" style="text-align:center; color:#666;">No password reset requests.</p>
+<div id="editStaffModal" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="staffModalTitle">Add Staff Member</h3>
+    <label for="staffUsername">Username:</label>
+    <input type="text" id="staffUsername" />
+    <label for="staffPassword">Password:</label>
+    <input type="password" id="staffPassword" />
+    <label for="staffRole">Role:</label>
+    <select id="staffRole">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+    </select>
+    <div class="modal-buttons">
+      <button id="cancelStaffBtn">Cancel</button>
+      <button id="saveStaffBtn">Save</button>
+    </div>
+  </div>
 </div>
 
-<button id="returnBtn" onclick="window.location.href='index.html'">Return</button>
+<!-- Firebase SDKs -->
+<script type="module">
+  // Import Firebase modules
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    onValue,
+    push,
+    set,
+    get,
+    child
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-<div id="modalOverlay"></div>
-
-<div id="editModal">
-  <h3>Edit Student</h3>
-  <input type="text" id="editName" placeholder="Student Name" />
-  <input type="text" id="editRoblox" placeholder="Roblox Username" />
-  <input type="text" id="editDiscord" placeholder="Discord Username" />
-  <label><input type="checkbox" id="editTimeout" /> Timeout Pass</label>
-  <textarea id="editNotes" placeholder="Notes..."></textarea>
-  <button onclick="saveEdit()">Save</button>
-  <button onclick="closeEdit()">Cancel</button>
-</div>
-
-<div id="editStaffModal">
-  <h3 id="staffModalTitle">Add Staff Member</h3>
-  <input type="text" id="staffUsername" placeholder="Username" />
-  <input type="password" id="staffPassword" placeholder="Password" />
-  <select id="staffRole">
-    <option value="staff">Staff</option>
-    <option value="admin">Admin</option>
-  </select>
-  <button onclick="saveStaff()">Save</button>
-  <button onclick="closeStaffModal()">Cancel</button>
-</div>
-
-<div id="resetPassModal">
-  <h3>Reset Password for <span id="resetUserSpan"></span></h3>
-  <input type="password" id="newPasswordInput" placeholder="New Password" />
-  <button onclick="confirmResetPassword()">Reset Password</button>
-  <button onclick="closeResetPassModal()">Cancel</button>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
+  // Your Firebase config here — replace with your real config
   const firebaseConfig = {
-    apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
-    authDomain: "ess-pastoral-database.firebaseapp.com",
-    projectId: "ess-pastoral-database",
-    storageBucket: "ess-pastoral-database.appspot.com",
-    messagingSenderId: "1010339363507",
-    appId: "1:1010339363507:web:04f0914ac6bc8033632db5"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    databaseURL: "YOUR_DB_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
   };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
 
-  // Dark/Light theme toggle
-  function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-  }
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-  // Tab navigation
+  // Tab logic
   const tabs = document.querySelectorAll('.tab-btn');
+  const tabContents = {
+    studentsTab: document.getElementById('studentsTab'),
+    staffTab: document.getElementById('staffTab')
+  };
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
       tabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('#studentsTab, #staffTab, #passwordTab').forEach(tab => {
-        tab.classList.add('hidden');
-      });
-      document.getElementById(btn.dataset.tab).classList.remove('hidden');
+      Object.values(tabContents).forEach(tab => tab.classList.add('hidden'));
+      tabContents[btn.dataset.tab].classList.remove('hidden');
     });
   });
 
-  // Fetch and display students
-  let studentsData = [];
-  async function fetchStudents() {
-    const snapshot = await db.collection('students').get();
-    studentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    displayStudents(studentsData);
+  // Elements
+  const studentsTableBody = document.querySelector('#studentsTable tbody');
+  const staffTableBody = document.querySelector('#staffTable tbody');
+
+  // Modal elements
+  const editStaffModal = document.getElementById('editStaffModal');
+  const staffUsernameInput = document.getElementById('staffUsername');
+  const staffPasswordInput = document.getElementById('staffPassword');
+  const staffRoleSelect = document.getElementById('staffRole');
+  const staffModalTitle = document.getElementById('staffModalTitle');
+
+  // Show/Hide modal helpers
+  function openModal() {
+    editStaffModal.classList.remove('hidden');
   }
-  function displayStudents(data) {
-    const tbody = document.querySelector('#adminStudentTable tbody');
-    tbody.innerHTML = '';
-    data.forEach(student => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${student.Name || ''}</td>
-        <td>${student.RobloxUser || ''}</td>
-        <td>${student.DiscordUser || ''}</td>
-        <td>${student.TimeoutPass ? 'Yes' : 'No'}</td>
-        <td>${student.Notes || ''}</td>
-        <td>
-          <button onclick="editStudent('${student.id}')">Edit</button>
-          <button class="remove-btn" onclick="removeStudent('${student.id}')">Remove</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+  function closeModal() {
+    editStaffModal.classList.add('hidden');
   }
 
-  // Search filter for students
-  document.getElementById('searchBar').addEventListener('input', e => {
-    const term = e.target.value.toLowerCase();
-    const filtered = studentsData.filter(s => s.Name && s.Name.toLowerCase().includes(term));
-    displayStudents(filtered);
-  });
-
-  // Sorting tables
-  function sortTable(tableType, colIndex) {
-    let dataArray;
-    if (tableType === 'students') {
-      dataArray = [...studentsData];
-    } else if (tableType === 'staff') {
-      dataArray = [...staffData];
-    } else {
-      return;
-    }
-    const header = (tableType === 'students' ? document.querySelectorAll('#adminStudentTable th') : document.querySelectorAll('#staffTable th'))[colIndex];
-    const asc = !header.classList.contains('asc');
-    header.classList.toggle('asc', asc);
-    header.classList.toggle('desc', !asc);
-    dataArray.sort((a,b) => {
-      let valA, valB;
-      if (tableType === 'students') {
-        switch(colIndex) {
-          case 0: valA = a.Name || ''; valB = b.Name || ''; break;
-          case 1: valA = a.RobloxUser || ''; valB = b.RobloxUser || ''; break;
-          case 2: valA = a.DiscordUser || ''; valB = b.DiscordUser || ''; break;
-          case 3: valA = a.TimeoutPass ? 'Yes' : 'No'; valB = b.TimeoutPass ? 'Yes' : 'No'; break;
-          default: valA = ''; valB = '';
-        }
+  // Fetch and render Students from Firebase
+  function loadStudents() {
+    const studentsRef = ref(db, 'students');
+    onValue(studentsRef, (snapshot) => {
+      studentsTableBody.innerHTML = '';
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([key, student], index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${student.name || ''}</td>
+            <td>${student.email || ''}</td>
+          `;
+          studentsTableBody.appendChild(tr);
+        });
       } else {
-        if(colIndex === 0){
-          valA = a.Username || '';
-          valB = b.Username || '';
-        } else if(colIndex === 1){
-          valA = a.Role || '';
-          valB = b.Role || '';
-        }
+        studentsTableBody.innerHTML = '<tr><td colspan="3">No students found</td></tr>';
       }
-      valA = valA.toString().toLowerCase();
-      valB = valB.toString().toLowerCase();
-      if (valA < valB) return asc ? -1 : 1;
-      if (valA > valB) return asc ? 1 : -1;
-      return 0;
     });
-    if (tableType === 'students') {
-      displayStudents(dataArray);
-      studentsData = dataArray;
-    } else {
-      displayStaff(dataArray);
-      staffData = dataArray;
-    }
   }
 
-  // Edit student modal
-  let currentEditId = null;
-  function editStudent(id) {
-    currentEditId = id;
-    const student = studentsData.find(s => s.id === id);
-    if (!student) return alert('Student not found');
-    document.getElementById('editName').value = student.Name || '';
-    document.getElementById('editRoblox').value = student.RobloxUser || '';
-    document.getElementById('editDiscord').value = student.DiscordUser || '';
-    document.getElementById('editTimeout').checked = !!student.TimeoutPass;
-    document.getElementById('editNotes').value = student.Notes || '';
-    openModal('editModal');
-  }
-  function saveEdit() {
-    const name = document.getElementById('editName').value.trim();
-    if (!name) return alert('Name cannot be empty');
-    const roblox = document.getElementById('editRoblox').value.trim();
-    const discord = document.getElementById('editDiscord').value.trim();
-    const timeoutPass = document.getElementById('editTimeout').checked;
-    const notes = document.getElementById('editNotes').value.trim();
-
-    db.collection('students').doc(currentEditId).update({
-      Name: name,
-      RobloxUser: roblox,
-      DiscordUser: discord,
-      TimeoutPass: timeoutPass,
-      Notes: notes
-    }).then(() => {
-      fetchStudents();
-      closeEdit();
-    }).catch(err => alert('Error updating student: ' + err.message));
-  }
-  function closeEdit() {
-    closeModal('editModal');
-    currentEditId = null;
+  // Fetch and render Staff from Firebase
+  function loadStaff() {
+    const staffRef = ref(db, 'staff');
+    onValue(staffRef, (snapshot) => {
+      staffTableBody.innerHTML = '';
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([key, staff], index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${staff.username || ''}</td>
+            <td>${staff.role || ''}</td>
+          `;
+          staffTableBody.appendChild(tr);
+        });
+      } else {
+        staffTableBody.innerHTML = '<tr><td colspan="3">No staff members found</td></tr>';
+      }
+    });
   }
 
-  function openModal(id) {
-    document.getElementById('modalOverlay').style.display = 'block';
-    document.getElementById(id).style.display = 'block';
-  }
-  function closeModal(id) {
-    document.getElementById('modalOverlay').style.display = 'none';
-    document.getElementById(id).style.display = 'none';
-  }
-  document.getElementById('modalOverlay').addEventListener('click', () => {
-    ['editModal', 'editStaffModal', 'resetPassModal'].forEach(closeModal);
+  // Add staff member modal and saving
+  const addStaffBtn = document.getElementById('addStaffBtn');
+  const cancelStaffBtn = document.getElementById('cancelStaffBtn');
+  const saveStaffBtn = document.getElementById('saveStaffBtn');
+
+  addStaffBtn.addEventListener('click', () => {
+    staffModalTitle.textContent = 'Add Staff Member';
+    staffUsernameInput.value = '';
+    staffPasswordInput.value = '';
+    staffRoleSelect.value = 'staff';
+    openModal();
   });
 
-  // Remove student
-  function removeStudent(id) {
-    if(confirm('Are you sure you want to remove this student?')){
-      db.collection('students').doc(id).delete()
-      .then(() => fetchStudents())
-      .catch(err => alert('Failed to remove student: ' + err.message));
-    }
-  }
+  cancelStaffBtn.addEventListener('click', () => {
+    closeModal();
+  });
 
-  // STAFF MANAGEMENT
-  let staffData = [];
-  async function fetchStaff() {
-    const snapshot = await db.collection('staff').get();
-    staffData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    displayStaff(staffData);
-  }
-  function displayStaff(data) {
-    const tbody = document.querySelector('#staffTable tbody');
-    tbody.innerHTML = '';
-    data.forEach(staff => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${staff.Username || ''}</td>
-        <td>${staff.Role || ''}</td>
-        <td>
-          <button onclick="editStaff('${staff.id}')">Edit</button>
-          <button class="remove-btn" onclick="removeStaff('${staff.id}')">Remove</button>
-          <button onclick="openResetPassModal('${staff.id}', '${staff.Username}')">Reset Password</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+  saveStaffBtn.addEventListener('click', async () => {
+    const username = staffUsernameInput.value.trim();
+    const password = staffPasswordInput.value;
+    const role = staffRoleSelect.value;
 
-  let currentStaffId = null;
-  function showAddStaffModal() {
-    currentStaffId = null;
-    document.getElementById('staffModalTitle').textContent = 'Add Staff Member';
-    document.getElementById('staffUsername').value = '';
-    document.getElementById('staffPassword').value = '';
-    document.getElementById('staffRole').value = 'staff';
-    openModal('editStaffModal');
-  }
-  function editStaff(id) {
-    currentStaffId = id;
-    const staff = staffData.find(s => s.id === id);
-    if(!staff) return alert('Staff member not found');
-    document.getElementById('staffModalTitle').textContent = 'Edit Staff Member';
-    document.getElementById('staffUsername').value = staff.Username || '';
-    document.getElementById('staffPassword').value = ''; // Leave blank for no change
-    document.getElementById('staffRole').value = staff.Role || 'staff';
-    openModal('editStaffModal');
-  }
-  function saveStaff() {
-    const username = document.getElementById('staffUsername').value.trim();
-    const password = document.getElementById('staffPassword').value;
-    const role = document.getElementById('staffRole').value;
-
-    if (!username) return alert('Username cannot be empty');
-    if (!currentStaffId && !password) return alert('Password is required for new staff');
-
-    if (currentStaffId) {
-      // Update existing
-      let updateData = { Username: username, Role: role };
-      if (password) updateData.Password = password; // For simplicity, store password directly (consider hashing in real use)
-      db.collection('staff').doc(currentStaffId).update(updateData)
-      .then(() => {
-        fetchStaff();
-        closeStaffModal();
-      }).catch(err => alert('Failed to update staff: ' + err.message));
-    } else {
-      // Add new
-      db.collection('staff').add({ Username: username, Password: password, Role: role })
-      .then(() => {
-        fetchStaff();
-        closeStaffModal();
-      }).catch(err => alert('Failed to add staff: ' + err.message));
-    }
-  }
-  function closeStaffModal() {
-    closeModal('editStaffModal');
-    currentStaffId = null;
-  }
-  function removeStaff(id) {
-    if(confirm('Are you sure you want to remove this staff member?')){
-      db.collection('staff').doc(id).delete()
-      .then(() => fetchStaff())
-      .catch(err => alert('Failed to remove staff: ' + err.message));
-    }
-  }
-
-  // PASSWORD RESET REQUESTS
-  async function fetchPasswordRequests() {
-    const snapshot = await db.collection('passwordResetRequests').get();
-    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const container = document.getElementById('passwordRequestsContainer');
-    const noReqMsg = document.getElementById('noRequestsMsg');
-
-    if (requests.length === 0) {
-      noReqMsg.style.display = 'block';
-      container.innerHTML = '';
+    if (!username) {
+      alert("Please enter a username.");
       return;
     }
-    noReqMsg.style.display = 'none';
-    container.innerHTML = '';
-    requests.forEach(req => {
-      const div = document.createElement('div');
-      div.className = 'request-item';
-      div.textContent = `Username: ${req.Username || 'N/A'}`;
-      div.onclick = () => openResetPassModal(req.id, req.Username);
-      container.appendChild(div);
-    });
-  }
+    if (!password) {
+      alert("Please enter a password.");
+      return;
+    }
 
-  // Reset password modal
-  let resetUserId = null;
-  function openResetPassModal(id, username) {
-    resetUserId = id;
-    document.getElementById('resetUserSpan').textContent = username || '';
-    document.getElementById('newPasswordInput').value = '';
-    openModal('resetPassModal');
-  }
-  function confirmResetPassword() {
-    const newPass = document.getElementById('newPasswordInput').value.trim();
-    if (!newPass) return alert('Please enter a new password.');
+    // You should hash the password and/or create authentication properly.
+    // Here we'll just save username, role, and password plaintext for demo ONLY.
 
-    // Check if resetUserId is a staff ID or a password reset request ID
-    // For staff, reset password in staff collection
-    // For password reset requests, assume resetUserId is a request ID, find username and update staff password, then remove request
-    db.collection('staff').doc(resetUserId).get()
-      .then(doc => {
-        if (doc.exists) {
-          // Reset staff password directly
-          return db.collection('staff').doc(resetUserId).update({ Password: newPass });
-        } else {
-          // It's a request ID; find request document to get username, then update staff password by username
-          return db.collection('passwordResetRequests').doc(resetUserId).get()
-            .then(reqDoc => {
-              if (!reqDoc.exists) throw new Error('Password reset request not found');
-              const username = reqDoc.data().Username;
-              return db.collection('staff').where('Username', '==', username).get()
-                .then(staffSnap => {
-                  if (staffSnap.empty) throw new Error('Staff member not found');
-                  const batch = db.batch();
-                  staffSnap.forEach(docStaff => {
-                    batch.update(docStaff.ref, { Password: newPass });
-                  });
-                  batch.delete(db.collection('passwordResetRequests').doc(resetUserId));
-                  return batch.commit();
-                });
-            });
-        }
-      })
-      .then(() => {
-        alert('Password reset successful.');
-        fetchPasswordRequests();
-        fetchStaff();
-        closeResetPassModal();
-      })
-      .catch(err => alert('Error resetting password: ' + err.message));
-  }
-  function closeResetPassModal() {
-    closeModal('resetPassModal');
-    resetUserId = null;
-  }
+    // Push new staff member to Firebase
+    try {
+      const staffRef = ref(db, 'staff');
+      const newStaffRef = push(staffRef);
+      await set(newStaffRef, {
+        username,
+        password, // NOTE: Storing plaintext password is unsafe. Use Firebase Auth in real apps.
+        role
+      });
+      alert('Staff member added!');
+      closeModal();
+    } catch (error) {
+      alert('Error adding staff: ' + error.message);
+    }
+  });
 
-  // Initial fetch
-  fetchStudents();
-  fetchStaff();
-  fetchPasswordRequests();
+  // Initial load
+  loadStudents();
+  loadStaff();
 </script>
 
 </body>
