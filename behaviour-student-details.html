@@ -3,137 +3,160 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Behaviour Student Details</title>
+  <title>Behaviour - Student Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="text-blue-600 hover:underline mb-4">← Back to Behaviour Database</button>
+    <h1 class="text-3xl font-bold mb-4" id="studentName">Loading...</h1>
+    <p class="mb-2"><strong>Year:</strong> <span id="studentYear"></span></p>
+    <p class="mb-6"><strong>Timeout Pass:</strong> <span id="studentTimeout"></span></p>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
+      <ul id="behaviourList" class="space-y-2 text-sm text-gray-800"></ul>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
+      <ul id="isolationList" class="space-y-2 text-sm text-gray-800"></ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
+      <ul id="exclusionList" class="space-y-2 text-sm text-gray-800"></ul>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
       projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.firebasestorage.app",
+      storageBucket: "pastoraldatabase.appspot.com",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-8">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-4 text-blue-600 hover:underline">← Return to Behaviour Database</button>
-    <h1 class="text-3xl font-bold mb-6" id="student-name">Loading...</h1>
 
-    <div id="student-info" class="mb-8 space-y-4">
-      <!-- Student details will be shown here -->
-    </div>
-
-    <div class="space-x-4">
-      <button id="btnAddIncident" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Add Behaviour Incident</button>
-      <button id="btnAddIsolation" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Add Isolation</button>
-      <button id="btnAddExclusion" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">Add Exclusion</button>
-    </div>
-
-    <div id="action-form-container" class="mt-8"></div>
-  </div>
-
-  <script>
     const urlParams = new URLSearchParams(window.location.search);
     const studentId = urlParams.get('id');
-    const studentNameElem = document.getElementById('student-name');
-    const studentInfoDiv = document.getElementById('student-info');
-    const actionFormContainer = document.getElementById('action-form-container');
 
-    if (!studentId) {
-      alert('No student ID provided.');
-      window.location.href = 'behaviourdatabase.html';
+    function formatDate(timestamp) {
+      if (!timestamp) return '';
+      const date = timestamp.toDate();
+      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    }
+
+    function createItem(text, timestamp, category, index) {
+      const li = document.createElement('li');
+      li.className = "flex justify-between items-center bg-gray-50 px-4 py-2 rounded";
+
+      const content = document.createElement('span');
+      content.textContent = `${text} (${formatDate(timestamp)})`;
+
+      const buttons = document.createElement('div');
+      buttons.className = "space-x-2";
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = "✏️";
+      editBtn.title = "Edit";
+      editBtn.className = "text-blue-600";
+      editBtn.onclick = () => editEntry(category, index);
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = "❌";
+      delBtn.title = "Delete";
+      delBtn.className = "text-red-600";
+      delBtn.onclick = () => deleteEntry(category, index);
+
+      buttons.appendChild(editBtn);
+      buttons.appendChild(delBtn);
+
+      li.appendChild(content);
+      li.appendChild(buttons);
+      return li;
+    }
+
+    function renderStudent(data) {
+      document.getElementById('studentName').textContent = data.name || 'Unknown';
+      document.getElementById('studentYear').textContent = data.year || 'N/A';
+      document.getElementById('studentTimeout').textContent = data.timeoutPass || 'No';
+
+      const behaviourList = document.getElementById('behaviourList');
+      behaviourList.innerHTML = '';
+      (data.behaviourIncidents || []).forEach((item, i) => {
+        behaviourList.appendChild(createItem(item.text, item.timestamp, 'behaviourIncidents', i));
+      });
+
+      const isolationList = document.getElementById('isolationList');
+      isolationList.innerHTML = '';
+      (data.isolations || []).forEach((item, i) => {
+        isolationList.appendChild(createItem(item.reason, item.timestamp, 'isolations', i));
+      });
+
+      const exclusionList = document.getElementById('exclusionList');
+      exclusionList.innerHTML = '';
+      (data.exclusions || []).forEach((item, i) => {
+        exclusionList.appendChild(createItem(item.reason, item.timestamp, 'exclusions', i));
+      });
+    }
+
+    function editEntry(field, index) {
+      db.collection("students").doc(studentId).get().then(doc => {
+        const data = doc.data();
+        const entry = data[field][index];
+        const oldText = field === 'behaviourIncidents' ? entry.text : entry.reason;
+        const updatedText = prompt("Edit entry:", oldText);
+        if (!updatedText || updatedText.trim() === "") return;
+
+        const updatedEntry = {
+          ...(field === 'behaviourIncidents' ? { text: updatedText } : { reason: updatedText }),
+          timestamp: entry.timestamp || new Date()
+        };
+
+        const updatedArray = [...data[field]];
+        updatedArray[index] = updatedEntry;
+
+        db.collection("students").doc(studentId).update({
+          [field]: updatedArray
+        }).then(() => location.reload());
+      });
+    }
+
+    function deleteEntry(field, index) {
+      if (!confirm("Are you sure you want to delete this entry?")) return;
+
+      db.collection("students").doc(studentId).get().then(doc => {
+        const data = doc.data();
+        const updatedArray = [...data[field]];
+        updatedArray.splice(index, 1);
+
+        db.collection("students").doc(studentId).update({
+          [field]: updatedArray
+        }).then(() => location.reload());
+      });
     }
 
     // Fetch and display student data
-    async function loadStudent() {
-      try {
-        const doc = await db.collection('students').doc(studentId).get();
-        if (!doc.exists) {
-          alert('Student not found.');
-          window.location.href = 'behaviourdatabase.html';
-          return;
+    if (studentId) {
+      db.collection("students").doc(studentId).get().then(doc => {
+        if (doc.exists) {
+          renderStudent(doc.data());
+        } else {
+          document.getElementById('studentName').textContent = "Student not found.";
         }
-        const data = doc.data();
-        studentNameElem.textContent = data.name || 'Unnamed Student';
-
-        studentInfoDiv.innerHTML = `
-          <p><strong>Year:</strong> ${data.year || '-'}</p>
-          <p><strong>Timeout Pass:</strong> ${data.timeoutPass || 'N'}</p>
-          <p><strong>Note:</strong> ${data.note || ''}</p>
-          <p><strong>Additional Learning Needs:</strong> ${data.additionalLearningNeeds || 'None'}</p>
-        `;
-      } catch (error) {
-        console.error(error);
-        alert('Failed to load student data.');
-      }
-    }
-
-    function clearActionForm() {
-      actionFormContainer.innerHTML = '';
-    }
-
-    function createActionForm(type) {
-      clearActionForm();
-      const form = document.createElement('form');
-      form.classList.add('space-y-4');
-
-      const titleMap = {
-        incident: 'Add Behaviour Incident',
-        isolation: 'Add Isolation',
-        exclusion: 'Add Exclusion'
-      };
-
-      form.innerHTML = `
-        <h2 class="text-xl font-semibold mb-2">${titleMap[type]}</h2>
-        <textarea id="actionDescription" rows="4" placeholder="Enter details..." class="w-full border border-gray-300 rounded p-2"></textarea>
-        <div>
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit</button>
-          <button type="button" id="cancelBtn" class="ml-2 px-4 py-2 rounded border border-gray-400 hover:bg-gray-100">Cancel</button>
-        </div>
-      `;
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const description = form.querySelector('#actionDescription').value.trim();
-        if (!description) {
-          alert('Please enter details.');
-          return;
-        }
-
-        try {
-          // You can create separate collections or store inside the student doc, here I add a subcollection "behaviourRecords"
-          await db.collection('students').doc(studentId).collection('behaviourRecords').add({
-            type,
-            description,
-            timestamp: new Date()
-          });
-          alert(`${titleMap[type]} added successfully.`);
-          clearActionForm();
-        } catch (err) {
-          console.error(err);
-          alert('Failed to add record.');
-        }
+      }).catch(err => {
+        console.error("Error fetching student:", err);
       });
-
-      form.querySelector('#cancelBtn').addEventListener('click', () => {
-        clearActionForm();
-      });
-
-      actionFormContainer.appendChild(form);
+    } else {
+      alert("Missing student ID.");
     }
-
-    document.getElementById('btnAddIncident').addEventListener('click', () => createActionForm('incident'));
-    document.getElementById('btnAddIsolation').addEventListener('click', () => createActionForm('isolation'));
-    document.getElementById('btnAddExclusion').addEventListener('click', () => createActionForm('exclusion'));
-
-    loadStudent();
   </script>
 </body>
 </html>
