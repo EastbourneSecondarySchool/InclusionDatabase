@@ -5,62 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Main Website Login</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      background: #f7f7f7;
-    }
+    body { font-family: Arial, sans-serif; padding: 40px; background: #f7f7f7; }
     .login-container {
-      background: white;
-      padding: 20px 30px;
-      max-width: 350px;
-      margin: auto;
-      border-radius: 6px;
+      background: white; padding: 20px 30px; max-width: 350px; margin: auto; border-radius: 6px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
     button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 20px;
-      background: #007bff;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
+      width: 100%; padding: 10px; margin-top: 20px; background: #007bff; border: none;
+      color: white; font-weight: bold; cursor: pointer; border-radius: 4px;
     }
-    button:disabled {
-      background: #ccc;
-      cursor: default;
-    }
+    button:disabled { background: #ccc; cursor: default; }
     .forgot-btn {
-      margin-top: 10px;
-      background: none;
-      border: none;
-      color: #007bff;
-      cursor: pointer;
-      text-decoration: underline;
-      font-size: 0.9em;
-      padding: 0;
+      margin-top: 10px; background: none; border: none; color: #007bff; cursor: pointer;
+      text-decoration: underline; font-size: 0.9em; padding: 0;
     }
-    .error {
-      color: red;
-      margin-top: 15px;
-    }
+    .error { color: red; margin-top: 15px; }
   </style>
 </head>
 <body>
@@ -120,30 +82,27 @@
       }
 
       try {
-        const staffCol = collection(db, 'staffUsers');
-        const q = query(staffCol, where('username', '==', username));
-        const snapshot = await getDocs(q);
+        const staffUsersCol = collection(db, 'staffUsers');
+        const q = query(staffUsersCol, where('username', '==', username));
+        const staffSnap = await getDocs(q);
 
-        if (snapshot.empty) {
+        if (staffSnap.empty) {
           errorMsg.textContent = 'Invalid username or password.';
           return;
         }
 
-        let matched = false;
-        snapshot.forEach(doc => {
+        let matchedUser = null;
+        staffSnap.forEach(doc => {
           const data = doc.data();
           if (data.password === password) {
-            matched = true;
-
-            // Save user info in localStorage
-            localStorage.setItem('loggedInUser', JSON.stringify({
-              username,
-              isAdmin: data.isAdmin || false
-            }));
+            matchedUser = data;
           }
         });
 
-        if (matched) {
+        if (matchedUser) {
+          // Save to localStorage
+          localStorage.setItem('loggedInUser', username);
+          localStorage.setItem('isAdmin', matchedUser.isAdmin || 'false');
           alert(`Welcome, ${username}!`);
           window.location.href = "index.html";
         } else {
