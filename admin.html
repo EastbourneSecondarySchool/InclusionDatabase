@@ -12,7 +12,7 @@
     .hidden { display: none; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; padding: 20px; width: 300px; border-radius: 5px; position: relative; }
     .modal-content h3 { margin-top: 0; }
     .modal-content label { display: block; margin-top: 10px; }
@@ -51,7 +51,8 @@
     <ul id="noticesList"></ul>
   </div>
 
-  <div id="editStaffModal" class="modal">
+  <!-- Staff Modal (Hidden by Default) -->
+  <div id="editStaffModal" class="modal hidden">
     <div class="modal-content">
       <h3 id="staffModalTitle">Add Staff Member</h3>
       <label for="staffUsername">Username:</label>
@@ -74,18 +75,26 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
-      getFirestore, collection, getDocs, onSnapshot, addDoc,
-      doc, updateDoc, deleteDoc, query, where, getDoc
+      getFirestore,
+      collection,
+      getDocs,
+      onSnapshot,
+      addDoc,
+      doc,
+      updateDoc,
+      deleteDoc,
+      query,
+      where,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
       authDomain: "pastoraldatabase.firebaseapp.com",
       projectId: "pastoraldatabase",
-      storageBucket: "pastoraldatabase.firebasestorage.app",
+      storageBucket: "pastoraldatabase.appspot.com",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
-      measurementId: "G-54LQVPWPJH"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -119,12 +128,8 @@
 
     let editingStaffId = null;
 
-    function showModal() {
-      editStaffModal.style.display = 'flex';
-    }
-    function hideModal() {
-      editStaffModal.style.display = 'none';
-    }
+    const openModal = () => editStaffModal.classList.remove('hidden');
+    const closeModal = () => editStaffModal.classList.add('hidden');
 
     function loadStudents() {
       const studentsCol = collection(db, 'students');
@@ -161,14 +166,17 @@
           btn.addEventListener('click', async () => {
             editingStaffId = btn.dataset.id;
             const staffDoc = await getDoc(doc(db, 'staffUsers', editingStaffId));
-            if (!staffDoc.exists()) return alert('Staff not found');
+            if (!staffDoc.exists()) {
+              alert('Staff not found');
+              return;
+            }
             const staff = staffDoc.data();
             staffModalTitle.textContent = 'Edit Staff Member';
             staffUsernameInput.value = staff.username || '';
             staffPasswordInput.value = '';
             staffRoleSelect.value = staff.role || 'staff';
             deleteStaffBtn.style.display = 'inline-block';
-            showModal();
+            openModal();
           });
         });
       });
@@ -182,17 +190,17 @@
           const notice = docSnap.data();
           const li = document.createElement('li');
           li.innerHTML = `${notice.username} requested reset. <button>Reset</button>`;
-          li.querySelector('button').addEventListener('click', async () => {
+          const resetBtn = li.querySelector('button');
+          resetBtn.addEventListener('click', async () => {
             const newPassword = prompt(`Enter new password for ${notice.username}:`);
             if (newPassword) {
               const q = query(collection(db, 'staffUsers'), where('username', '==', notice.username));
-              const result = await getDocs(q);
-              if (result.empty) return alert('User not found');
-              for (const staffDoc of result.docs) {
-                await updateDoc(staffDoc.ref, { password: newPassword });
+              const match = await getDocs(q);
+              for (const userDoc of match.docs) {
+                await updateDoc(userDoc.ref, { password: newPassword });
               }
               await deleteDoc(doc(db, 'passwordNotices', docSnap.id));
-              alert('Password reset');
+              alert('Password reset.');
             }
           });
           noticesList.appendChild(li);
@@ -207,28 +215,27 @@
       staffPasswordInput.value = '';
       staffRoleSelect.value = 'staff';
       deleteStaffBtn.style.display = 'none';
-      showModal();
+      openModal();
     });
 
-    document.getElementById('cancelStaffBtn').addEventListener('click', () => {
-      hideModal();
-    });
+    document.getElementById('cancelStaffBtn').addEventListener('click', closeModal);
 
     document.getElementById('saveStaffBtn').addEventListener('click', async () => {
       const username = staffUsernameInput.value.trim();
       const password = staffPasswordInput.value.trim();
       const role = staffRoleSelect.value;
+
       if (!username) return alert('Username required');
 
-      const staffCol = collection(db, 'staffUsers');
-      const q = query(staffCol, where('username', '==', username));
-      const existing = await getDocs(q);
-      if (!existing.empty) {
-        const isDuplicate = existing.docs.some(doc => doc.id !== editingStaffId);
-        if (isDuplicate) return alert('Username already exists.');
-      }
-
       try {
+        const staffCol = collection(db, 'staffUsers');
+        const q = query(staffCol, where('username', '==', username));
+        const existing = await getDocs(q);
+
+        if (!existing.empty && existing.docs.some(d => d.id !== editingStaffId)) {
+          return alert('Username already exists.');
+        }
+
         if (editingStaffId) {
           const updateData = { username, role };
           if (password) updateData.password = password;
@@ -237,25 +244,25 @@
           if (!password) return alert('Password required');
           await addDoc(staffCol, { username, password, role });
         }
-        hideModal();
+
+        closeModal();
       } catch (err) {
-        alert('Error saving staff: ' + err.message);
+        alert('Error: ' + err.message);
       }
     });
 
     deleteStaffBtn.addEventListener('click', async () => {
       if (!editingStaffId) return;
-      if (confirm('Are you sure?')) {
-        try {
-          await deleteDoc(doc(db, 'staffUsers', editingStaffId));
-          hideModal();
-        } catch (err) {
-          alert('Delete failed: ' + err.message);
-        }
+      if (!confirm('Delete this staff member?')) return;
+      try {
+        await deleteDoc(doc(db, 'staffUsers', editingStaffId));
+        closeModal();
+      } catch (err) {
+        alert('Delete error: ' + err.message);
       }
     });
 
-    // Init
+    // Initial load
     loadStudents();
     loadStaff();
     loadNotices();
