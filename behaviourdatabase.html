@@ -1,4 +1,3 @@
-<!-- Updated behaviourdatabase.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +8,12 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
     import {
-      getFirestore, collection, getDocs, addDoc, doc
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      doc,
+      serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -18,7 +22,8 @@
       projectId: "pastoraldatabase",
       storageBucket: "pastoraldatabase.firebasestorage.app",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -35,12 +40,13 @@
         }
         snapshot.forEach(docSnap => {
           const student = docSnap.data();
+          const id = docSnap.id;
           const tr = document.createElement('tr');
           tr.className = "hover:bg-gray-100";
 
           const nameTd = document.createElement('td');
           const nameLink = document.createElement('a');
-          nameLink.href = `behaviour-student-details.html?id=${docSnap.id}`;
+          nameLink.href = `behaviour-student-details.html?id=${id}`;
           nameLink.className = "text-blue-600 hover:underline";
           nameLink.textContent = student.name;
           nameTd.className = "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900";
@@ -56,9 +62,9 @@
 
           const actionsTd = document.createElement('td');
           actionsTd.innerHTML = `
-            <button onclick="addIncident('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded mr-2 hover:bg-indigo-700 text-sm">Add Behaviour</button>
-            <button onclick="addIsolation('${docSnap.id}')" class="bg-yellow-600 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-700 text-sm">Add Isolation</button>
-            <button onclick="addExclusion('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Add Exclusion</button>
+            <button onclick="addIncident('${id}')" class="bg-indigo-600 text-white px-3 py-1 rounded mr-2 hover:bg-indigo-700 text-sm">Add Behaviour</button>
+            <button onclick="addIsolation('${id}')" class="bg-yellow-600 text-white px-3 py-1 rounded mr-2 hover:bg-yellow-700 text-sm">Add Isolation</button>
+            <button onclick="addExclusion('${id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm">Add Exclusion</button>
           `;
           actionsTd.className = "px-6 py-4 whitespace-nowrap text-sm";
 
@@ -76,46 +82,46 @@
     }
 
     window.addIncident = async (id) => {
-      const note = prompt("Enter behaviour incident");
-      if (!note) return;
+      const reason = prompt("Enter behaviour incident reason:");
+      if (!reason) return;
       try {
-        await addDoc(collection(db, `students/${id}/behaviourIncidents`), {
-          reason: note,
-          timestamp: new Date()
+        await addDoc(collection(db, "students", id, "incidents"), {
+          reason,
+          timestamp: serverTimestamp()
         });
         alert("Incident added successfully.");
-      } catch (e) {
-        console.error("Error adding incident:", e);
+      } catch (err) {
+        console.error("Failed to add incident:", err);
         alert("Failed to add incident.");
       }
     };
 
     window.addIsolation = async (id) => {
-      const note = prompt("Enter isolation reason");
-      if (!note) return;
+      const reason = prompt("Enter isolation reason:");
+      if (!reason) return;
       try {
-        await addDoc(collection(db, `students/${id}/isolations`), {
-          reason: note,
-          timestamp: new Date()
+        await addDoc(collection(db, "students", id, "isolations"), {
+          reason,
+          timestamp: serverTimestamp()
         });
         alert("Isolation added successfully.");
-      } catch (e) {
-        console.error("Error adding isolation:", e);
+      } catch (err) {
+        console.error("Failed to add isolation:", err);
         alert("Failed to add isolation.");
       }
     };
 
     window.addExclusion = async (id) => {
-      const note = prompt("Enter exclusion reason");
-      if (!note) return;
+      const reason = prompt("Enter exclusion reason:");
+      if (!reason) return;
       try {
-        await addDoc(collection(db, `students/${id}/exclusions`), {
-          reason: note,
-          timestamp: new Date()
+        await addDoc(collection(db, "students", id, "exclusions"), {
+          reason,
+          timestamp: serverTimestamp()
         });
         alert("Exclusion added successfully.");
-      } catch (e) {
-        console.error("Error adding exclusion:", e);
+      } catch (err) {
+        console.error("Failed to add exclusion:", err);
         alert("Failed to add exclusion.");
       }
     };
@@ -127,6 +133,7 @@
   <div class="max-w-6xl mx-auto bg-white shadow rounded-lg p-6">
     <button onclick="window.location.href='index.html'" class="mb-4 text-blue-600 hover:underline">← Return to Dashboard</button>
     <h1 class="text-3xl font-bold mb-6">Behaviour Database</h1>
+
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
@@ -137,7 +144,7 @@
         </tr>
       </thead>
       <tbody id="studentsTableBody" class="bg-white divide-y divide-gray-200">
-        <!-- Student rows rendered here -->
+        <!-- Rows will be injected here -->
       </tbody>
     </table>
   </div>
