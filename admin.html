@@ -32,7 +32,7 @@
   <div id="studentsTab" class="tab-content">
     <h2>Students</h2>
     <table id="studentsTable">
-      <thead><tr><th>#</th><th>Name</th><th>Email</th></tr></thead>
+      <thead><tr><th>#</th><th>Name</th><th>Discord</th><th>Roblox</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -51,6 +51,7 @@
     <ul id="noticesList"></ul>
   </div>
 
+  <!-- Add/Edit Staff Modal (starts hidden) -->
   <div id="editStaffModal" class="modal hidden">
     <div class="modal-content">
       <h3 id="staffModalTitle">Add Staff Member</h3>
@@ -70,6 +71,7 @@
     </div>
   </div>
 
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
@@ -100,6 +102,7 @@
       staffTab: document.getElementById('staffTab'),
       noticesTab: document.getElementById('noticesTab')
     };
+
     tabs.forEach(btn => {
       btn.addEventListener('click', () => {
         tabs.forEach(b => b.classList.remove('active'));
@@ -130,7 +133,12 @@
         if (data) {
           Object.entries(data).forEach(([_, student], index) => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${index + 1}</td><td>${student.name || ''}</td><td>${student.email || ''}</td>`;
+            tr.innerHTML = `
+              <td>${index + 1}</td>
+              <td>${student.name || ''}</td>
+              <td>${student.discord || ''}</td>
+              <td>${student.roblox || ''}</td>
+            `;
             studentsTableBody.appendChild(tr);
           });
         }
@@ -160,13 +168,13 @@
         if (data) {
           Object.entries(data).forEach(([key, notice]) => {
             const li = document.createElement('li');
-            li.innerHTML = `${notice.username} requested reset. <button data-id="${key}" data-username="${notice.username}">Reset</button>`;
-            li.querySelector('button').addEventListener('click', async () => {
+            li.innerHTML = `${notice.username} requested a reset. <button data-id="${key}" data-username="${notice.username}">Reset</button>`;
+            li.querySelector('button').addEventListener('click', () => {
               const newPassword = prompt(`Enter new password for ${notice.username}`);
               if (newPassword) {
                 const staffRef = ref(db, 'staff');
-                onValue(staffRef, snapshot => {
-                  const all = snapshot.val();
+                onValue(staffRef, staffSnap => {
+                  const all = staffSnap.val();
                   if (all) {
                     Object.entries(all).forEach(([id, staff]) => {
                       if (staff.username === notice.username) {
@@ -201,7 +209,11 @@
       const password = staffPasswordInput.value.trim();
       const role = staffRoleSelect.value;
 
-      if (!username || !password) return alert('All fields required.');
+      if (!username || !password) {
+        alert('All fields required.');
+        return;
+      }
+
       const staffRef = ref(db, 'staff');
       const newRef = push(staffRef);
       await set(newRef, { username, password, role });
