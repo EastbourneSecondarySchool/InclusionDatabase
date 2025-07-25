@@ -14,6 +14,12 @@
       border: 1px solid #ccc;
       text-align: left;
     }
+    th {
+      background-color: #f4f4f4;
+    }
+    tr:hover {
+      background-color: #f0f8ff;
+    }
     a.button {
       margin-top: 20px;
       background: #0066cc;
@@ -23,14 +29,23 @@
       text-decoration: none;
       display: inline-block;
     }
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
   </style>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <script>
-  if (!sessionStorage.getItem('loggedInUser')) {
+  // ✅ Use localStorage for consistency with index.html
+  if (!localStorage.getItem('loggedInUser')) {
     window.location.href = 'login.html';
   }
 </script>
@@ -51,7 +66,6 @@
 <a href="index.html" class="button">Return</a>
 
 <script>
-  // Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
     authDomain: "pastoraldatabase.firebaseapp.com",
@@ -62,13 +76,11 @@
     measurementId: "G-54LQVPWPJH"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
   async function loadTimeoutStudents() {
     try {
-      // Query for students with timeout === 'Y'
       const snapshot = await db.collection('students').where('timeout', '==', 'Y').get();
       const timeoutStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -88,7 +100,6 @@
       timeoutStudents.forEach(student => {
         const tr = document.createElement('tr');
 
-        // Name with clickable link to details page using Firestore doc id
         const nameTd = document.createElement('td');
         const link = document.createElement('a');
         link.href = `student-details.html?id=${encodeURIComponent(student.id)}`;
@@ -96,17 +107,14 @@
         nameTd.appendChild(link);
         tr.appendChild(nameTd);
 
-        // Roblox username
         const robloxTd = document.createElement('td');
         robloxTd.textContent = student.roblox || '';
         tr.appendChild(robloxTd);
 
-        // Discord username
         const discordTd = document.createElement('td');
         discordTd.textContent = student.discord || '';
         tr.appendChild(discordTd);
 
-        // Notes
         const notesTd = document.createElement('td');
         notesTd.textContent = student.notes || '';
         tr.appendChild(notesTd);
