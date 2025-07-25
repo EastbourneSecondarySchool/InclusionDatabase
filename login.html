@@ -21,17 +21,9 @@
   <button id="forgotPasswordBtn" style="margin-top: 10px;">Forgot Password?</button>
   <div class="message" id="message"></div>
 
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      onValue,
-      push,
-      child,
-      get
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -66,32 +58,42 @@
 
       try {
         const staffRef = ref(db, 'staff');
-        let found = false;
+        const snapshot = await get(staffRef);
 
-        onValue(staffRef, (snapshot) => {
-          snapshot.forEach(childSnap => {
-            const user = childSnap.val();
-            if (user.username === username && user.password === password) {
-              found = true;
-              sessionStorage.setItem('loggedInUser', JSON.stringify({
-                id: childSnap.key,
-                username: user.username,
-                isAdmin: user.role === 'admin'
-              }));
+        if (!snapshot.exists()) {
+          messageDiv.textContent = 'No staff users found.';
+          return;
+        }
 
-              messageDiv.style.color = 'green';
-              messageDiv.textContent = 'Login successful! Redirecting...';
-              setTimeout(() => window.location.href = 'index.html', 1000);
-            }
-          });
+        const staffData = snapshot.val();
+        let foundUser = null;
 
-          if (!found) {
-            messageDiv.textContent = 'Invalid username or password.';
+        for (const id in staffData) {
+          const user = staffData[id];
+          if (user.username === username && user.password === password) {
+            foundUser = { id, ...user };
+            break;
           }
-        }, { onlyOnce: true });
+        }
 
-      } catch (err) {
-        console.error(err);
+        if (foundUser) {
+          sessionStorage.setItem('loggedInUser', JSON.stringify({
+            id: foundUser.id,
+            username: foundUser.username,
+            isAdmin: foundUser.role === 'admin'
+          }));
+
+          messageDiv.style.color = 'green';
+          messageDiv.textContent = 'Login successful! Redirecting...';
+
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+        } else {
+          messageDiv.textContent = 'Invalid username or password.';
+        }
+      } catch (error) {
+        console.error(error);
         messageDiv.textContent = 'Login failed. Please try again.';
       }
     });
@@ -100,10 +102,14 @@
       const username = prompt("Enter your username:");
       if (!username) return;
 
-      const noticesRef = ref(db, 'passwordNotices');
-      await push(noticesRef, { username: username.trim() });
-
-      alert('Password reset request sent to admin.');
+      try {
+        const noticesRef = ref(db, 'passwordNotices');
+        await push(noticesRef, { username: username.trim() });
+        alert('Password reset request sent to admin.');
+      } catch (error) {
+        console.error(error);
+        alert('Failed to send password reset request.');
+      }
     });
   </script>
 </body>
