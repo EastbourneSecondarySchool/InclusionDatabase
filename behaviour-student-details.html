@@ -3,34 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Behaviour - Student Details</title>
+  <title>Student Behaviour Details</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  
+  <!-- Firebase (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
-    <button onclick="window.location.href='behaviourdatabase.html'" class="text-blue-600 hover:underline mb-4">← Back to Behaviour Database</button>
-    <h1 class="text-3xl font-bold mb-4" id="studentName">Loading...</h1>
-    <p class="mb-2"><strong>Year:</strong> <span id="studentYear"></span></p>
-    <p class="mb-6"><strong>Timeout Pass:</strong> <span id="studentTimeout"></span></p>
-
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
-      <ul id="behaviourList" class="space-y-2 text-sm text-gray-800"></ul>
-    </div>
-
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
-      <ul id="isolationList" class="space-y-2 text-sm text-gray-800"></ul>
-    </div>
-
-    <div>
-      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
-      <ul id="exclusionList" class="space-y-2 text-sm text-gray-800"></ul>
-    </div>
-  </div>
-
+  
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCuoUMX1iWfNYrX4FdFLlFjX-7yEumg0dc",
@@ -38,125 +17,106 @@
       projectId: "pastoraldatabase",
       storageBucket: "pastoraldatabase.appspot.com",
       messagingSenderId: "859785843482",
-      appId: "1:859785843482:web:4e0e5458391c1daee592a3"
+      appId: "1:859785843482:web:4e0e5458391c1daee592a3",
+      measurementId: "G-54LQVPWPJH"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
+    <button onclick="window.location.href='behaviourdatabase.html'" class="mb-6 text-blue-600 hover:underline">← Back to Behaviour List</button>
+    <h1 class="text-2xl font-bold mb-4" id="studentName">Student Details</h1>
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get('id');
+    <div id="behaviourSection" class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Behaviour Incidents</h2>
+      <ul id="behaviourList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
+    </div>
 
-    function formatDate(timestamp) {
-      if (!timestamp) return '';
-      const date = timestamp.toDate();
-      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    <div id="isolationSection" class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Isolations</h2>
+      <ul id="isolationList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
+    </div>
+
+    <div id="exclusionSection" class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Exclusions</h2>
+      <ul id="exclusionList" class="list-disc list-inside space-y-2 text-sm text-gray-700"></ul>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get('id');
+
+    if (!studentId) {
+      alert('No student ID provided.');
+      window.location.href = 'behaviourdatabase.html';
     }
 
-    function createItem(text, timestamp, category, index) {
-      const li = document.createElement('li');
-      li.className = "flex justify-between items-center bg-gray-50 px-4 py-2 rounded";
+    const behaviourList = document.getElementById('behaviourList');
+    const isolationList = document.getElementById('isolationList');
+    const exclusionList = document.getElementById('exclusionList');
+    const studentName = document.getElementById('studentName');
 
-      const content = document.createElement('span');
-      content.textContent = `${text} (${formatDate(timestamp)})`;
-
-      const buttons = document.createElement('div');
-      buttons.className = "space-x-2";
-
-      const editBtn = document.createElement('button');
-      editBtn.textContent = "✏️";
-      editBtn.title = "Edit";
-      editBtn.className = "text-blue-600";
-      editBtn.onclick = () => editEntry(category, index);
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = "❌";
-      delBtn.title = "Delete";
-      delBtn.className = "text-red-600";
-      delBtn.onclick = () => deleteEntry(category, index);
-
-      buttons.appendChild(editBtn);
-      buttons.appendChild(delBtn);
-
-      li.appendChild(content);
-      li.appendChild(buttons);
-      return li;
+    function formatTimestamp(ts) {
+      if (!ts) return '';
+      const date = ts.toDate();
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     }
 
-    function renderStudent(data) {
-      document.getElementById('studentName').textContent = data.name || 'Unknown';
-      document.getElementById('studentYear').textContent = data.year || 'N/A';
-      document.getElementById('studentTimeout').textContent = data.timeoutPass || 'No';
-
-      const behaviourList = document.getElementById('behaviourList');
-      behaviourList.innerHTML = '';
-      (data.behaviourIncidents || []).forEach((item, i) => {
-        behaviourList.appendChild(createItem(item.text, item.timestamp, 'behaviourIncidents', i));
-      });
-
-      const isolationList = document.getElementById('isolationList');
-      isolationList.innerHTML = '';
-      (data.isolations || []).forEach((item, i) => {
-        isolationList.appendChild(createItem(item.reason, item.timestamp, 'isolations', i));
-      });
-
-      const exclusionList = document.getElementById('exclusionList');
-      exclusionList.innerHTML = '';
-      (data.exclusions || []).forEach((item, i) => {
-        exclusionList.appendChild(createItem(item.reason, item.timestamp, 'exclusions', i));
-      });
-    }
-
-    function editEntry(field, index) {
-      db.collection("students").doc(studentId).get().then(doc => {
-        const data = doc.data();
-        const entry = data[field][index];
-        const oldText = field === 'behaviourIncidents' ? entry.text : entry.reason;
-        const updatedText = prompt("Edit entry:", oldText);
-        if (!updatedText || updatedText.trim() === "") return;
-
-        const updatedEntry = {
-          ...(field === 'behaviourIncidents' ? { text: updatedText } : { reason: updatedText }),
-          timestamp: entry.timestamp || new Date()
-        };
-
-        const updatedArray = [...data[field]];
-        updatedArray[index] = updatedEntry;
-
-        db.collection("students").doc(studentId).update({
-          [field]: updatedArray
-        }).then(() => location.reload());
-      });
-    }
-
-    function deleteEntry(field, index) {
-      if (!confirm("Are you sure you want to delete this entry?")) return;
-
-      db.collection("students").doc(studentId).get().then(doc => {
-        const data = doc.data();
-        const updatedArray = [...data[field]];
-        updatedArray.splice(index, 1);
-
-        db.collection("students").doc(studentId).update({
-          [field]: updatedArray
-        }).then(() => location.reload());
-      });
-    }
-
-    // Fetch and display student data
-    if (studentId) {
-      db.collection("students").doc(studentId).get().then(doc => {
-        if (doc.exists) {
-          renderStudent(doc.data());
-        } else {
-          document.getElementById('studentName').textContent = "Student not found.";
+    async function loadStudentDetails() {
+      try {
+        const doc = await db.collection('students').doc(studentId).get();
+        if (!doc.exists) {
+          studentName.textContent = "Student not found.";
+          return;
         }
-      }).catch(err => {
-        console.error("Error fetching student:", err);
-      });
-    } else {
-      alert("Missing student ID.");
+
+        const data = doc.data();
+        studentName.textContent = data.name || 'Unnamed Student';
+
+        const behaviour = data.behaviourIncidents || [];
+        if (behaviour.length === 0) {
+          behaviourList.innerHTML = '<li class="text-gray-400 italic">No incidents recorded.</li>';
+        } else {
+          behaviour.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.text || 'No details'} – ${formatTimestamp(item.timestamp)}`;
+            behaviourList.appendChild(li);
+          });
+        }
+
+        const isolations = data.isolations || [];
+        if (isolations.length === 0) {
+          isolationList.innerHTML = '<li class="text-gray-400 italic">No isolations recorded.</li>';
+        } else {
+          isolations.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.reason || 'No reason'} – ${formatTimestamp(item.timestamp)}`;
+            isolationList.appendChild(li);
+          });
+        }
+
+        const exclusions = data.exclusions || [];
+        if (exclusions.length === 0) {
+          exclusionList.innerHTML = '<li class="text-gray-400 italic">No exclusions recorded.</li>';
+        } else {
+          exclusions.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.reason || 'No reason'} – ${formatTimestamp(item.timestamp)}`;
+            exclusionList.appendChild(li);
+          });
+        }
+
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        studentName.textContent = "Error loading student.";
+      }
     }
+
+    loadStudentDetails();
   </script>
 </body>
 </html>
