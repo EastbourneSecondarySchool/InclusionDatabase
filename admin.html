@@ -12,7 +12,7 @@
     .hidden { display: none; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; padding: 20px; width: 300px; border-radius: 5px; position: relative; }
     .modal-content h3 { margin-top: 0; }
     .modal-content label { display: block; margin-top: 10px; }
@@ -51,7 +51,7 @@
     <ul id="noticesList"></ul>
   </div>
 
-  <div id="editStaffModal" class="modal hidden">
+  <div id="editStaffModal" class="modal">
     <div class="modal-content">
       <h3 id="staffModalTitle">Add Staff Member</h3>
       <label for="staffUsername">Username:</label>
@@ -74,17 +74,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      onSnapshot,
-      addDoc,
-      doc,
-      updateDoc,
-      deleteDoc,
-      query,
-      where,
-      getDoc
+      getFirestore, collection, getDocs, onSnapshot, addDoc,
+      doc, updateDoc, deleteDoc, query, where, getDoc
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -100,7 +91,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Tab logic
     const tabs = document.querySelectorAll('.tab-btn');
     const tabContents = {
       studentsTab: document.getElementById('studentsTab'),
@@ -116,7 +106,6 @@
       });
     });
 
-    // Elements
     const studentsTableBody = document.querySelector('#studentsTable tbody');
     const staffTableBody = document.querySelector('#staffTable tbody');
     const noticesList = document.getElementById('noticesList');
@@ -128,12 +117,15 @@
     const staffModalTitle = document.getElementById('staffModalTitle');
     const deleteStaffBtn = document.getElementById('deleteStaffBtn');
 
-    let editingStaffId = null; // track the doc ID of the staff member being edited
+    let editingStaffId = null;
 
-    const openModal = () => editStaffModal.classList.remove('hidden');
-    const closeModal = () => editStaffModal.classList.add('hidden');
+    function showModal() {
+      editStaffModal.style.display = 'flex';
+    }
+    function hideModal() {
+      editStaffModal.style.display = 'none';
+    }
 
-    // Load Students
     function loadStudents() {
       const studentsCol = collection(db, 'students');
       onSnapshot(studentsCol, snapshot => {
@@ -148,7 +140,6 @@
       });
     }
 
-    // Load Staff
     function loadStaff() {
       const staffCol = collection(db, 'staffUsers');
       onSnapshot(staffCol, snapshot => {
@@ -166,28 +157,23 @@
           staffTableBody.appendChild(tr);
         });
 
-        // Add click listeners for edit buttons
         document.querySelectorAll('.editBtn').forEach(btn => {
           btn.addEventListener('click', async () => {
             editingStaffId = btn.dataset.id;
             const staffDoc = await getDoc(doc(db, 'staffUsers', editingStaffId));
-            if (!staffDoc.exists()) {
-              alert('Staff member not found');
-              return;
-            }
+            if (!staffDoc.exists()) return alert('Staff not found');
             const staff = staffDoc.data();
             staffModalTitle.textContent = 'Edit Staff Member';
             staffUsernameInput.value = staff.username || '';
-            staffPasswordInput.value = ''; // blank for security
+            staffPasswordInput.value = '';
             staffRoleSelect.value = staff.role || 'staff';
             deleteStaffBtn.style.display = 'inline-block';
-            openModal();
+            showModal();
           });
         });
       });
     }
 
-    // Load Password Notices
     function loadNotices() {
       const noticesCol = collection(db, 'passwordNotices');
       onSnapshot(noticesCol, snapshot => {
@@ -196,29 +182,17 @@
           const notice = docSnap.data();
           const li = document.createElement('li');
           li.innerHTML = `${notice.username} requested reset. <button>Reset</button>`;
-          const resetBtn = li.querySelector('button');
-          resetBtn.addEventListener('click', async () => {
+          li.querySelector('button').addEventListener('click', async () => {
             const newPassword = prompt(`Enter new password for ${notice.username}:`);
             if (newPassword) {
-              try {
-                // Find staff doc by username
-                const staffCol = collection(db, 'staffUsers');
-                const q = query(staffCol, where('username', '==', notice.username));
-                const staffSnap = await getDocs(q);
-                if (staffSnap.empty) {
-                  alert('Staff user not found');
-                  return;
-                }
-                // Update password for all matching staff (usually one)
-                for (const staffDoc of staffSnap.docs) {
-                  await updateDoc(staffDoc.ref, { password: newPassword });
-                }
-                // Remove the notice
-                await deleteDoc(doc(db, 'passwordNotices', docSnap.id));
-                alert('Password reset successfully');
-              } catch (error) {
-                alert('Error resetting password: ' + error.message);
+              const q = query(collection(db, 'staffUsers'), where('username', '==', notice.username));
+              const result = await getDocs(q);
+              if (result.empty) return alert('User not found');
+              for (const staffDoc of result.docs) {
+                await updateDoc(staffDoc.ref, { password: newPassword });
               }
+              await deleteDoc(doc(db, 'passwordNotices', docSnap.id));
+              alert('Password reset');
             }
           });
           noticesList.appendChild(li);
@@ -226,7 +200,6 @@
       });
     }
 
-    // Add Staff button opens modal for new user
     document.getElementById('addStaffBtn').addEventListener('click', () => {
       editingStaffId = null;
       staffModalTitle.textContent = 'Add Staff Member';
@@ -234,78 +207,55 @@
       staffPasswordInput.value = '';
       staffRoleSelect.value = 'staff';
       deleteStaffBtn.style.display = 'none';
-      openModal();
+      showModal();
     });
 
-    // Cancel modal
     document.getElementById('cancelStaffBtn').addEventListener('click', () => {
-      closeModal();
+      hideModal();
     });
 
-    // Save staff member (add or update)
     document.getElementById('saveStaffBtn').addEventListener('click', async () => {
       const username = staffUsernameInput.value.trim();
       const password = staffPasswordInput.value.trim();
       const role = staffRoleSelect.value;
+      if (!username) return alert('Username required');
 
-      if (!username) {
-        alert('Username is required');
-        return;
+      const staffCol = collection(db, 'staffUsers');
+      const q = query(staffCol, where('username', '==', username));
+      const existing = await getDocs(q);
+      if (!existing.empty) {
+        const isDuplicate = existing.docs.some(doc => doc.id !== editingStaffId);
+        if (isDuplicate) return alert('Username already exists.');
       }
 
       try {
-        const staffCol = collection(db, 'staffUsers');
-
-        // Check if username already exists in another doc
-        const q = query(staffCol, where('username', '==', username));
-        const existing = await getDocs(q);
-        if (!existing.empty) {
-          // If editing, allow if the username belongs to this doc only
-          const isDuplicate = existing.docs.some(d => d.id !== editingStaffId);
-          if (isDuplicate) {
-            alert('Username already exists.');
-            return;
-          }
-        }
-
         if (editingStaffId) {
-          // Update existing staff member
-          const staffDocRef = doc(db, 'staff', editingStaffId);
           const updateData = { username, role };
-          if (password) {
-            updateData.password = password; // only update if provided
-          }
-          await updateDoc(staffDocRef, updateData);
+          if (password) updateData.password = password;
+          await updateDoc(doc(db, 'staffUsers', editingStaffId), updateData);
         } else {
-          // Add new staff member
-          if (!password) {
-            alert('Password is required for new staff');
-            return;
-          }
+          if (!password) return alert('Password required');
           await addDoc(staffCol, { username, password, role });
         }
-
-        closeModal();
-      } catch (error) {
-        alert('Error saving staff: ' + error.message);
+        hideModal();
+      } catch (err) {
+        alert('Error saving staff: ' + err.message);
       }
     });
 
-    // Delete staff member
     deleteStaffBtn.addEventListener('click', async () => {
       if (!editingStaffId) return;
-
-      if (confirm('Are you sure you want to delete this staff member?')) {
+      if (confirm('Are you sure?')) {
         try {
-          await deleteDoc(doc(db, 'staff', editingStaffId));
-          closeModal();
-        } catch (error) {
-          alert('Error deleting staff: ' + error.message);
+          await deleteDoc(doc(db, 'staffUsers', editingStaffId));
+          hideModal();
+        } catch (err) {
+          alert('Delete failed: ' + err.message);
         }
       }
     });
 
-    // Initialize all
+    // Init
     loadStudents();
     loadStaff();
     loadNotices();
